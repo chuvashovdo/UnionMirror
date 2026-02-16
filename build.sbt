@@ -59,6 +59,8 @@ lazy val dependencies =
   Seq(
     libraryDependencies ++= Seq(
       // main dependencies
+      org.typelevel.`cats-core`,
+      Dependencies.io.circe.`circe-core`,
     ),
     libraryDependencies ++= Seq(
       com.eed3si9n.expecty.expecty,
@@ -66,5 +68,7 @@ lazy val dependencies =
       org.scalameta.`munit-scalacheck`,
       org.scalameta.munit,
       org.typelevel.`discipline-munit`,
+      // Typeclass libraries for testing
+      dev.zio.`zio-prelude`,
     ).map(_ % Test),
   )

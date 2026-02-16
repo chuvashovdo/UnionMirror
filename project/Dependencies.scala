@@ -10,6 +10,20 @@ object Dependencies {
     }
   }
 
+  object dev {
+    object zio {
+      val `zio-prelude` =
+        "dev.zio" %% "zio-prelude" % "1.0.0-RC31"
+    }
+  }
+
+  object io {
+    object circe {
+      val `circe-core` =
+        "io.circe" %% "circe-core" % "0.14.10"
+    }
+  }
+
   object org {
     object scalacheck {
       val scalacheck =
@@ -28,6 +42,9 @@ object Dependencies {
     }
 
     object typelevel {
+      val `cats-core` =
+        "org.typelevel" %% "cats-core" % "2.12.0"
+
       val `discipline-munit` =
         "org.typelevel" %% "discipline-munit" % "2.0.0"
     }
