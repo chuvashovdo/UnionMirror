@@ -2,13 +2,64 @@ import Dependencies._
 
 ThisBuild / scalaVersion := "3.8.1"
 
+lazy val core =
+  project
+    .in(file("core"))
+    .settings(name := "union-derivation-core")
+    .settings(commonSettings)
+    .settings(autoImportSettings)
+    .settings(
+      libraryDependencies += "org.scala-lang" %% "scala3-compiler" % scalaVersion.value % "provided"
+    )
+
+lazy val catsInterop =
+  project
+    .in(file("interop-cats"))
+    .dependsOn(core)
+    .settings(name := "union-derivation-cats")
+    .settings(commonSettings)
+    .settings(autoImportSettings)
+    .settings(
+      libraryDependencies += Dependencies.org.typelevel.`cats-core`
+    )
+
+lazy val circeInterop =
+  project
+    .in(file("interop-circe"))
+    .dependsOn(core)
+    .settings(name := "union-derivation-circe")
+    .settings(commonSettings)
+    .settings(autoImportSettings)
+    .settings(
+      libraryDependencies += Dependencies.io.circe.`circe-core`
+    )
+
+lazy val tests =
+  project
+    .in(file("tests"))
+    .dependsOn(core, catsInterop, circeInterop)
+    .settings(name := "union-derivation-tests")
+    .settings(commonSettings)
+    .settings(autoImportSettings)
+    .settings(
+      libraryDependencies ++= Seq(
+        Dependencies.com.eed3si9n.expecty.expecty,
+        Dependencies.org.scalacheck.scalacheck,
+        Dependencies.org.scalameta.`munit-scalacheck`,
+        Dependencies.org.scalameta.munit,
+        Dependencies.org.typelevel.`discipline-munit`,
+        Dependencies.dev.zio.`zio-prelude`,
+      )
+    )
+
 lazy val `unionmirror` =
   project
     .in(file("."))
     .settings(name := "unionmirror")
     .settings(commonSettings)
     .settings(autoImportSettings)
-    .settings(dependencies)
+    .aggregate(core, catsInterop, circeInterop, tests)
+    .dependsOn(core, catsInterop, circeInterop)
 
 lazy val commonSettings = {
   lazy val commonScalacOptions =
@@ -27,9 +78,6 @@ lazy val commonSettings = {
   lazy val otherCommonSettings =
     Seq(
       update / evictionWarningOptions := EvictionWarningOptions.empty
-      // cs launch scalac:3.3.1 -- -Wconf:help
-      // src is not yet available for Scala3
-      // scalacOptions += s"-Wconf:src=${target.value}/.*:s",
     )
 
   Seq(
@@ -58,7 +106,6 @@ lazy val autoImportSettings =
 lazy val dependencies =
   Seq(
     libraryDependencies ++= Seq(
-      // main dependencies
       org.typelevel.`cats-core`,
       Dependencies.io.circe.`circe-core`,
     ),
@@ -68,7 +115,6 @@ lazy val dependencies =
       org.scalameta.`munit-scalacheck`,
       org.scalameta.munit,
       org.typelevel.`discipline-munit`,
-      // Typeclass libraries for testing
       dev.zio.`zio-prelude`,
     ).map(_ % Test),
   )
