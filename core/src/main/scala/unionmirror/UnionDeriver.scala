@@ -10,6 +10,12 @@ object UnionDeriver:
   trait ContravariantInstanceBuilder[F[_]]:
     def build[T](dispatch: T => F[Any]): F[T]
 
+  trait CovariantInstanceBuilder[F[_]]:
+    def build[T](elems: List[F[Any]]): F[T]
+
+  trait BinaryInstanceBuilder[F[_]]:
+    def build[T](ordinal: T => Int, elems: List[F[Any]]): F[T]
+
   inline def deriveContravariant[F[_], T](
     using
     m: Mirror.SumOf[T]
@@ -25,10 +31,35 @@ object UnionDeriver:
     using
     m: Mirror.SumOf[T]
   ): F[T] =
-    compiletime.error("UnionDeriver.deriveCovariant is not implemented yet")
+    summonFrom {
+      case b: CovariantInstanceBuilder[F] =>
+        UnionDeriverImpl.deriveCovariantWithBuilder[F, T](using m, b)
+      case _ =>
+        UnionDeriverImpl.deriveCovariantSAM[F, T](using m)
+    }
 
   inline def deriveBinary[F[_], T](
     using
     m: Mirror.SumOf[T]
   ): F[T] =
-    compiletime.error("UnionDeriver.deriveBinary is not implemented yet")
+    summonFrom {
+      case b: BinaryInstanceBuilder[F] =>
+        UnionDeriverImpl.deriveBinaryWithBuilder[F, T](using m, b)
+      case _ =>
+        compiletime.error("Binary derivation requires an explicit BinaryInstanceBuilder")
+    }
+
+  inline def derive[F[_], T](
+    using
+    m: Mirror.SumOf[T]
+  ): F[T] =
+    summonFrom {
+      case b: BinaryInstanceBuilder[F] =>
+        UnionDeriverImpl.deriveBinaryWithBuilder[F, T](using m, b)
+      case b: ContravariantInstanceBuilder[F] =>
+        UnionDeriverImpl.deriveContravariantWithBuilder[F, T](using m, b)
+      case b: CovariantInstanceBuilder[F] =>
+        UnionDeriverImpl.deriveCovariantWithBuilder[F, T](using m, b)
+      case _ =>
+        UnionDeriverImpl.deriveAutoSAM[F, T](using m)
+    }

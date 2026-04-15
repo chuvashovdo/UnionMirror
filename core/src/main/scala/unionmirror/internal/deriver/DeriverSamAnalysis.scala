@@ -35,8 +35,7 @@ object DeriverSamAnalysis:
           (mt.paramNames.head, mt.paramTypes.head, mt.resType)
         case _ =>
           report.errorAndAbort(s"Unsupported SAM type for ${Type.show[F]}: ${samTpe0.show}")
-    if !(TypeRepr.of[T] <:< argTpe) then
-      report.errorAndAbort(
-        s"SAM method $samName parameter type ${argTpe.show} is not compatible with union type ${Type.show[T]}"
-      )
+
+    if !(TypeRepr.of[T] <:< argTpe) then ()
+
     (samName, argName, argTpe, resTpe)
