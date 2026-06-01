@@ -1,6 +1,7 @@
 import Dependencies._
 
 ThisBuild / scalaVersion := "3.8.1"
+ThisBuild / versionScheme := Some("early-semver")
 
 lazy val core =
   project
@@ -52,6 +53,14 @@ lazy val tests =
     .settings(name := "union-derivation-tests")
     .settings(commonSettings)
     .settings(autoImportSettings)
+    .settings(
+      Compile / scalacOptions ~= { opts =>
+        opts.filterNot(_.contains("wartremover"))
+      },
+      Test / scalacOptions ~= { opts =>
+        opts.filterNot(_.contains("wartremover"))
+      }
+    )
     .settings(
       libraryDependencies ++= Seq(
         Dependencies.com.eed3si9n.expecty.expecty,

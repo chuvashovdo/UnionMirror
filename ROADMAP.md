@@ -2,31 +2,33 @@
 
 ## Текущий статус проекта
 
-**Версия:** 0.2.0 (WIP)
+**Версия:** 0.2.0
 
 **Статус:** ✅ Основная функциональность реализована и протестирована
 
 ### Реализовано:
 
 - ✅ Contravariant деривация (SAM + Builder)
-- ✅ Covariant деривация (SAM + Builder)
+- ✅ Covariant деривация (SAM + Builder, с safe-type fallback для `Try`/`Either`/`Option`)
 - ✅ Binary деривация (Builder)
 - ✅ Interop с cats (Show, Eq, Order, Hash)
-- ✅ Interop с circe (Encoder, Decoder)
-- ✅ Тесты реорганизованы в отдельные файлы по категориям (30+ сценариев)
+- ✅ Interop с circe (Encoder, Decoder с агрегацией ошибок)
+- ✅ Interop с ZIO Prelude (Equal, Hash)
+- ✅ Автоматический синтез `Mirror.SumOf` через `unionmirror.auto.given`
+- ✅ Универсальный `UnionDeriver.derive` с диспетчеризацией по типу билдера
+- ✅ Корректная дедупликация параметризованных типов (`List[Int] | List[String]`)
+- ✅ JMH бенчмарки (см. `bench/BENCHMARK_RESULTS.md`)
+- ✅ Тесты реорганизованы в отдельные файлы по категориям (40+ сценариев)
 - ✅ Документация границ применимости и результатов (CAPABILITIES.md)
 
-**См. также:** [CAPABILITIES.md](CAPABILITIES.md) - подробное описание возможностей, ограничений и проблем библиотеки.
-
-### В работе:
-
-- 🔄 Исследование производительности
+**См. также:** [CAPABILITIES.md](CAPABILITIES.md) — подробное описание возможностей, ограничений и проблем библиотеки.
 
 ### Планы:
 
-- 📋 Оптимизация fallback try-catch стратегии
-- 📋 Поддержка Scala 3.4+
-- 📋 Дополнительные interop модули (zio, fs2?)
+- 📋 Поддержка Scala 3.4+ LTS (текущая версия: 3.8.1)
+- 📋 Дополнительные interop модули (fs2, scodec)
+- 📋 Публикация артефактов (Maven Central / Sonatype)
+- 📋 Исследование multi-method деривации без билдера
 
 ## Реализованные задачи
 
@@ -46,7 +48,7 @@
 ```scala
 given UnionDeriver.CovariantInstanceBuilder[Decoder] =
   new UnionDeriver.CovariantInstanceBuilder[Decoder]:
-    def build[T](elems: List[Decoder[Any]]): Decoder[T] =
+    def build[T](elems: IndexedSeq[Decoder[Any]]): Decoder[T] =
       Decoder.instance { (c: io.circe.HCursor) =>
         elems.foldLeft[Decoder.Result[T]](...) { (acc, decoder) =>
           // fallback: пробуем каждый decoder по очереди
@@ -91,7 +93,7 @@ val p = UnionDeriver.deriveCovariant[Parser, Cat | Dog]
 // Eq
 given UnionDeriver.BinaryInstanceBuilder[Eq] =
   new UnionDeriver.BinaryInstanceBuilder[Eq]:
-    def build[T](ordinal: T => Int, elems: List[Eq[Any]]): Eq[T] =
+    def build[T](ordinal: T => Int, elems: IndexedSeq[Eq[Any]]): Eq[T] =
       new Eq[T]:
         def eqv(x: T, y: T): Boolean =
           val ox = ordinal(x)
@@ -102,7 +104,7 @@ given UnionDeriver.BinaryInstanceBuilder[Eq] =
 // Order
 given UnionDeriver.BinaryInstanceBuilder[Order] =
   new UnionDeriver.BinaryInstanceBuilder[Order]:
-    def build[T](ordinal: T => Int, elems: List[Order[Any]]): Order[T] =
+    def build[T](ordinal: T => Int, elems: IndexedSeq[Order[Any]]): Order[T] =
       new Order[T]:
         def compare(x: T, y: T): Int =
           val ox = ordinal(x)
@@ -116,37 +118,36 @@ given UnionDeriver.BinaryInstanceBuilder[Order] =
 - `Eq[Cat | Dog]` - значения разных типов не равны, одного типа - делегирование
 - `Order[Cat | Dog]` - разные типы сравниваются по ordinal, одинаковые - делегирование
 
-## Нереализованные задачи
+## Завершённые исследования
 
-### ❌ Исследование производительности
+### ✅ Производительность
 
-**План:**
+См. `bench/BENCHMARK_RESULTS.md`. JMH-бенчмарки покрывают:
 
-1. Сравнить время компиляции с/без деривации
-2. Измерить рантайм-оверхед синтетических Mirror vs стандартные enum
-3. Протестировать на больших union типах (10+ вариантов)
+- Деривацию SAM-типклассов (контравариантные и ковариантные)
+- Сравнение try-catch vs folding для covariant SAM
+- Бинарную деривацию через билдеры
+- Масштабируемость на больших union (5–10 типов)
 
-**Метрики для сбора:**
-
-- Время компиляции (scalac)
-- Размер байткода
-- Время выполнения ordinal()
-- Время выполнения деривированных операций (eqv, compare, show, encode)
+C версии 0.2.0 массив инстансов аллоцируется один раз на деривацию (раньше — на каждый вызов SAM-метода).
 
 ## Структура проекта
 
 ```
 core/
-├── UnionDeriver.scala          # Public API для деривации
-├── UnionMirror.scala          # Синтез Mirror.SumOf
+├── UnionDeriver.scala               # Public API для деривации
+├── UnionMirror.scala                # Синтез Mirror.SumOf
+├── auto/package.scala               # Автоматический given Mirror.SumOf
 └── internal/
-    ├── UnionDeriverImpl.scala # Реализация деривации
-    ├── UnionMirrorImpl.scala   # Реализация Mirror.SumOf
+    ├── UnionDeriverImpl.scala       # Splice-обёртки для макро-импл
+    ├── UnionMirrorImpl.scala        # Реализация Mirror.SumOf
+    ├── TupleTypeBuilder.scala       # Сборка Tuple типов из List[TypeRepr]
     ├── deriver/
+    │   ├── AutoSamImpl.scala        # derive[F,T] auto SAM dispatch
     │   ├── ContravariantWithBuilderImpl.scala
     │   ├── ContravariantSamImpl.scala
     │   ├── CovariantWithBuilderImpl.scala
-    │   ├── CovariantSamImpl.scala      # ✅ Реализован (fallback)
+    │   ├── CovariantSamImpl.scala   # SAM с safe-type fallback
     │   ├── BinaryWithBuilderImpl.scala
     │   ├── DeriverCommon.scala
     │   ├── DeriverInstanceSummoning.scala
@@ -159,23 +160,27 @@ core/
         └── UnionSort.scala
 
 interop-cats/
-└── instances.scala            # Show, Eq, Order
+└── instances.scala                  # Show, Eq, Order, Hash
 
 interop-circe/
-└── instances.scala            # Encoder, Decoder (builder)
+└── instances.scala                  # Encoder, Decoder (builder с агрегацией ошибок)
+
+interop-zio/
+└── instances.scala                  # Equal, Hash
 
 tests/
-├── SamTests.scala              # SAM деривация
-├── BinaryInstanceTests.scala   # Бинарные операции
-├── BuilderTests.scala          # Кастомные билдеры
-├── AdvancedTypeTests.scala     # Продвинутые типы
-├── UnionNormalizationTests.scala  # Нормализация Union
-├── HierarchyTests.scala       # Иерархии типов
-├── InteropTests.scala         # Интеграция с Cats/Circe
-├── LargeUnionTests.scala      # Большие Union
-├── MirrorInteropTests.scala   # Взаимодействие с Mirror
-├── RecursiveTests.scala        # Рекурсивные структуры
-└── CommonModels.scala         # Общие модели (Cat, Dog)
+├── SamTests.scala
+├── AutoDeriveTests.scala
+├── BinaryInstanceTests.scala
+├── BuilderTests.scala
+├── AdvancedTypeTests.scala
+├── UnionNormalizationTests.scala
+├── HierarchyTests.scala
+├── LargeUnionTests.scala
+├── MirrorInteropTests.scala
+├── RecursiveTests.scala
+├── CommonModels.scala
+└── interop/{cats,circe,zio}/...InteropTests.scala
 ```
 
 ## Примеры использования

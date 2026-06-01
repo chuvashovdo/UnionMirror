@@ -21,7 +21,7 @@ class BinaryDerivationBench:
 
   given UnionDeriver.BinaryInstanceBuilder[Eq] =
     new UnionDeriver.BinaryInstanceBuilder[Eq]:
-      def build[T](ordinal: T => Int, elems: List[Eq[Any]]): Eq[T] =
+      def build[T](ordinal: T => Int, elems: IndexedSeq[Eq[Any]]): Eq[T] =
         Eq.instance { (x, y) =>
           val ox = ordinal(x)
           val oy = ordinal(y)

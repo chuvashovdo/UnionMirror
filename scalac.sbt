@@ -25,7 +25,7 @@ ThisBuild / warnings := {
   if (insideCI.value)
     Seq(
       "-Wconf:any:error", // for scalac warnings
-      "-Xfatal-warnings", // for wartremover warts
+      "-Werror", // for wartremover warts
     )
   else if (lintOn.value)
     Seq("-Wconf:any:warning")

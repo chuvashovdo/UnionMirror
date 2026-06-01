@@ -60,7 +60,7 @@ p.parse("true") // true
 ```scala
 given UnionDeriver.CovariantInstanceBuilder[Decoder] =
   new UnionDeriver.CovariantInstanceBuilder[Decoder]:
-    def build[T](elems: List[Decoder[Any]]): Decoder[T] = ...
+    def build[T](elems: IndexedSeq[Decoder[Any]]): Decoder[T] = ...
 ```
 
 #### 1.3 Бинарная деривация (Binary)
@@ -70,7 +70,7 @@ given UnionDeriver.CovariantInstanceBuilder[Decoder] =
 ```scala
 given UnionDeriver.BinaryInstanceBuilder[Eq] =
   new UnionDeriver.BinaryInstanceBuilder[Eq]:
-    def build[T](ordinal: T => Int, elems: List[Eq[Any]]): Eq[T] =
+    def build[T](ordinal: T => Int, elems: IndexedSeq[Eq[Any]]): Eq[T] =
       Eq.instance { (x, y) =>
         val ox = ordinal(x)
         val oy = ordinal(y)
@@ -317,6 +317,20 @@ sbt bench/jmh:run
 - Union типов с параметрами высшего порядка (например, `List[_] | Option[_]`)
 - Union типов с зависимыми типами (path-dependent types)
 
+**Erasure-коллизии параметризованных типов (фундаментальное ограничение JVM):**
+
+Для unions вида `List[Int] | List[String]`, `Option[Int] | Option[String]`, `Either[A, B] | Either[C, D]` и т.п. — компилятор макроса корректно строит `Mirror.SumOf` с двумя отдельными элементами (видно через `MirroredElemLabels`/`MirroredElemTypes`), но **во время выполнения** `mirror.ordinal(x)` не может различить такие типы из-за стирания параметров на JVM. Будет всегда выбран первый совпавший вариант.
+
+Макрос выдаёт `warning` при синтезе такого мирора. Если требуется runtime-дискриминация, используйте обёртки:
+
+```scala
+final case class IntList(value: List[Int])
+final case class StrList(value: List[String])
+type Union = IntList | StrList  // ordinals работают корректно
+```
+
+Для singleton literal типов (`1 | 2 | "a"`) проблемы нет: Scala 3 компилирует `case _: 1` в проверку равенства.
+
 **Частично поддерживаются:**
 
 - **Refinement типы** (например, `{ def foo: Int } | String`): Библиотека автоматически извлекает базовый тип из refinement и использует его для деривации. Например, `Int { def foo: Int }` будет обработан как `Int`. Это позволяет использовать union с refinement типами, но информация о refinement теряется в runtime.
@@ -350,8 +364,10 @@ sbt bench/jmh:run
 - **AdvancedTypeTests.scala** - Продвинутые типы (singleton, object, параметризованные, multi-param, Any, LSP)
 - **UnionNormalizationTests.scala** - Нормализация и упорядочивание Union
 - **HierarchyTests.scala** - Иерархии трейтов и классов
-- **InteropTests.scala** - Интеграция с Cats и Circe
-- **ZioInteropTests.scala** - Интеграция с ZIO Prelude
+- **interop/cats/CatsInteropTests.scala** - Интеграция с Cats
+- **interop/circe/CirceInteropTests.scala** - Интеграция с Circe
+- **interop/zio/ZioInteropTests.scala** - Интеграция с ZIO Prelude
+- **AutoDeriveTests.scala** - `UnionDeriver.derive` универсальный API
 - **LargeUnionTests.scala** - Большие Union и производительность fallback
 - **MirrorInteropTests.scala** - Взаимодействие со стандартным Mirror
 - **RecursiveTests.scala** - Рекурсивные структуры
