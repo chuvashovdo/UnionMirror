@@ -5,11 +5,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html)
 with the `early-semver` scheme.
 
-## [0.3.0] — Unreleased
+## [1.0.0]
 
 ### Added
 
-- `Apache-2.0` `LICENSE` file at the repository root.
+- `MIT` `LICENSE` file at the repository root.
 - `interop-zio`: automatic `inline given Equal[T]` and `inline given Hash[T]`
   for symmetry with `interop-cats` / `interop-circe` (no need to call
   `UnionDeriver.derive` explicitly anymore).

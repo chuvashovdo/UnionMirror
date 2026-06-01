@@ -27,7 +27,7 @@ Scala 3 library for deriving type-class instances over **union types** (`A | B |
 ## Quick start
 
 ```scala
-libraryDependencies += "your.org" %% "union-derivation-core" % "0.3.0"
+libraryDependencies += "your.org" %% "union-derivation-core" % "1.0.0"
 ```
 
 > The artifact is not yet published; build locally with `sbt publishLocal`.
