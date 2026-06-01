@@ -1,49 +1,49 @@
 # Roadmap
 
-## Текущий статус проекта
+## Current project status
 
-**Версия:** 0.2.0
+**Version:** 1.0.0
 
-**Статус:** ✅ Основная функциональность реализована и протестирована
+**Status:** ✅ Core functionality is implemented and tested
 
-### Реализовано:
+### Implemented:
 
-- ✅ Contravariant деривация (SAM + Builder)
-- ✅ Covariant деривация (SAM + Builder, с safe-type fallback для `Try`/`Either`/`Option`)
-- ✅ Binary деривация (Builder)
-- ✅ Interop с cats (Show, Eq, Order, Hash)
-- ✅ Interop с circe (Encoder, Decoder с агрегацией ошибок)
-- ✅ Interop с ZIO Prelude (Equal, Hash)
-- ✅ Автоматический синтез `Mirror.SumOf` через `unionmirror.auto.given`
-- ✅ Универсальный `UnionDeriver.derive` с диспетчеризацией по типу билдера
-- ✅ Корректная дедупликация параметризованных типов (`List[Int] | List[String]`)
-- ✅ JMH бенчмарки (см. `bench/BENCHMARK_RESULTS.md`)
-- ✅ Тесты реорганизованы в отдельные файлы по категориям (40+ сценариев)
-- ✅ Документация границ применимости и результатов (CAPABILITIES.md)
+- ✅ Contravariant derivation (SAM + Builder)
+- ✅ Covariant derivation (SAM + Builder, with safe-type fallback for `Try`/`Either`/`Option`)
+- ✅ Binary derivation (Builder)
+- ✅ cats interop (Show, Eq, Order, Hash)
+- ✅ circe interop (Encoder, Decoder with error aggregation)
+- ✅ ZIO Prelude interop (Equal, Hash)
+- ✅ Automatic `Mirror.SumOf` synthesis via `unionmirror.auto.given`
+- ✅ Universal `UnionDeriver.derive` with builder-based dispatch
+- ✅ Correct deduplication of parametrized types (`List[Int] | List[String]`)
+- ✅ JMH benchmarks (see `bench/BENCHMARK_RESULTS.md`)
+- ✅ Tests reorganized into per-category files (40+ scenarios)
+- ✅ Capability and limitation documentation (CAPABILITIES.md)
 
-**См. также:** [CAPABILITIES.md](CAPABILITIES.md) — подробное описание возможностей, ограничений и проблем библиотеки.
+**See also:** [CAPABILITIES.md](CAPABILITIES.md) — a detailed description of the library's capabilities, limitations and known issues.
 
-### Планы:
+### Plans:
 
-- 📋 Поддержка Scala 3.4+ LTS (текущая версия: 3.8.1)
-- 📋 Дополнительные interop модули (fs2, scodec)
-- 📋 Публикация артефактов (Maven Central / Sonatype)
-- 📋 Исследование multi-method деривации без билдера
+- 📋 Scala 3.4+ LTS support (current version: 3.8.1)
+- 📋 Additional interop modules (fs2, scodec)
+- 📋 Artifact publishing (Maven Central / Sonatype)
+- 📋 Research into multi-method derivation without builders
 
-## Реализованные задачи
+## Completed tasks
 
-### ✅ deriveCovariant (Производящие тайпклассы)
+### ✅ deriveCovariant (producing type-classes)
 
-**Статус:** Полностью реализован (builder + SAM)
+**Status:** Fully implemented (builder + SAM)
 
-**Описание:**
+**Description:**
 
-- Добавлен `CovariantInstanceBuilder[F[_]]` в `UnionDeriver`
-- Реализован `CovariantWithBuilderImpl` для типклассов, которые принимают список инстансов
-- Реализован `CovariantSamImpl` для автоматической деривации ковариантных SAM-типклассов
-- Fallback-стратегия: последовательный перебор инстансов с try-catch до первого успеха
+- Added `CovariantInstanceBuilder[F[_]]` to `UnionDeriver`
+- Implemented `CovariantWithBuilderImpl` for type-classes that take a list of instances
+- Implemented `CovariantSamImpl` for automatic derivation of covariant SAM type-classes
+- Fallback strategy: sequential iteration over instances with try/catch until the first success
 
-**Пример использования (circe - builder):**
+**Usage example (circe — builder):**
 
 ```scala
 given UnionDeriver.CovariantInstanceBuilder[Decoder] =
@@ -51,7 +51,7 @@ given UnionDeriver.CovariantInstanceBuilder[Decoder] =
     def build[T](elems: IndexedSeq[Decoder[Any]]): Decoder[T] =
       Decoder.instance { (c: io.circe.HCursor) =>
         elems.foldLeft[Decoder.Result[T]](...) { (acc, decoder) =>
-          // fallback: пробуем каждый decoder по очереди
+          // fallback: try each decoder in turn
         }
       }
 
@@ -59,35 +59,35 @@ inline given [T](using Mirror.SumOf[T]): Decoder[T] =
   UnionDeriver.deriveCovariant[Decoder, T]
 ```
 
-**Пример использования (SAM - автоматическая деривация):**
+**Usage example (SAM — automatic derivation):**
 
 ```scala
 trait Parser[+T]:
   def parse(s: String): T
 
-given Parser[Cat] = (s: String) => /* парсинг Cat */
-given Parser[Dog] = (s: String) => /* парсинг Dog */
+given Parser[Cat] = (s: String) => /* parsing Cat */
+given Parser[Dog] = (s: String) => /* parsing Dog */
 
 val p = UnionDeriver.deriveCovariant[Parser, Cat | Dog]
-// Автоматически генерирует класс с fallback-логикой
+// Automatically generates a class with fallback logic
 ```
 
-**Ограничения:**
+**Limitations:**
 
-- Для сложных типклассов (не-SAM) требуется явный `CovariantInstanceBuilder`
-- Fallback использует try-catch, что может быть медленно для высоконагруженных систем
+- For non-SAM type-classes, an explicit `CovariantInstanceBuilder` is required
+- The fallback uses try/catch, which can be slow in high-load scenarios
 
-### ✅ deriveBinary (Бинарные операции)
+### ✅ deriveBinary (binary operations)
 
-**Статус:** Реализован
+**Status:** Implemented
 
-**Описание:**
+**Description:**
 
-- Добавлен `BinaryInstanceBuilder[F[_]]` в `UnionDeriver`
-- Реализован `BinaryWithBuilderImpl` для типклассов с бинарными операциями
-- Логика: сравнение ординалов сначала, затем делегирование инстансу конкретного типа
+- Added `BinaryInstanceBuilder[F[_]]` to `UnionDeriver`
+- Implemented `BinaryWithBuilderImpl` for type-classes with binary operations
+- Logic: compare ordinals first, then delegate to the concrete-type instance
 
-**Пример использования (cats):**
+**Usage example (cats):**
 
 ```scala
 // Eq
@@ -113,41 +113,41 @@ given UnionDeriver.BinaryInstanceBuilder[Order] =
           else elems(ox).compare(x, y)
 ```
 
-**Тесты:**
+**Tests:**
 
-- `Eq[Cat | Dog]` - значения разных типов не равны, одного типа - делегирование
-- `Order[Cat | Dog]` - разные типы сравниваются по ordinal, одинаковые - делегирование
+- `Eq[Cat | Dog]` — values of different types are not equal; values of the same type delegate to the underlying instance
+- `Order[Cat | Dog]` — different types are compared by ordinal; equal types delegate
 
-## Завершённые исследования
+## Completed research
 
-### ✅ Производительность
+### ✅ Performance
 
-См. `bench/BENCHMARK_RESULTS.md`. JMH-бенчмарки покрывают:
+See `bench/BENCHMARK_RESULTS.md`. JMH benchmarks cover:
 
-- Деривацию SAM-типклассов (контравариантные и ковариантные)
-- Сравнение try-catch vs folding для covariant SAM
-- Бинарную деривацию через билдеры
-- Масштабируемость на больших union (5–10 типов)
+- SAM type-class derivation (contravariant and covariant)
+- try/catch vs. folding comparison for covariant SAM
+- Binary derivation via builders
+- Scalability on large unions (5–10 types)
 
-C версии 0.2.0 массив инстансов аллоцируется один раз на деривацию (раньше — на каждый вызов SAM-метода).
+Since 0.2.0 the instance array is allocated once per derivation (previously — on each SAM-method invocation).
 
-## Структура проекта
+## Project layout
 
 ```
 core/
-├── UnionDeriver.scala               # Public API для деривации
-├── UnionMirror.scala                # Синтез Mirror.SumOf
-├── auto/package.scala               # Автоматический given Mirror.SumOf
+├── UnionDeriver.scala               # Public derivation API
+├── UnionMirror.scala                # Mirror.SumOf synthesis
+├── auto/package.scala               # Automatic given Mirror.SumOf
 └── internal/
-    ├── UnionDeriverImpl.scala       # Splice-обёртки для макро-импл
-    ├── UnionMirrorImpl.scala        # Реализация Mirror.SumOf
-    ├── TupleTypeBuilder.scala       # Сборка Tuple типов из List[TypeRepr]
+    ├── UnionDeriverImpl.scala       # Splice wrappers for macro impls
+    ├── UnionMirrorImpl.scala        # Mirror.SumOf implementation
+    ├── TupleTypeBuilder.scala       # Tuple-type construction from List[TypeRepr]
     ├── deriver/
     │   ├── AutoSamImpl.scala        # derive[F,T] auto SAM dispatch
     │   ├── ContravariantWithBuilderImpl.scala
     │   ├── ContravariantSamImpl.scala
     │   ├── CovariantWithBuilderImpl.scala
-    │   ├── CovariantSamImpl.scala   # SAM с safe-type fallback
+    │   ├── CovariantSamImpl.scala   # SAM with safe-type fallback
     │   ├── BinaryWithBuilderImpl.scala
     │   ├── DeriverCommon.scala
     │   ├── DeriverInstanceSummoning.scala
@@ -163,7 +163,7 @@ interop-cats/
 └── instances.scala                  # Show, Eq, Order, Hash
 
 interop-circe/
-└── instances.scala                  # Encoder, Decoder (builder с агрегацией ошибок)
+└── instances.scala                  # Encoder, Decoder (builder with error aggregation)
 
 interop-zio/
 └── instances.scala                  # Equal, Hash
@@ -183,7 +183,7 @@ tests/
 └── interop/{cats,circe,zio}/...InteropTests.scala
 ```
 
-## Примеры использования
+## Usage examples
 
 ### Contravariant (Show, Encoder)
 
@@ -203,20 +203,20 @@ given Eq[Dog] = Eq.by[Dog, String](_.name)
 
 val eq = summon[Eq[Cat | Dog]]
 eq.eqv(Cat("m"), Cat("m")) // true
-eq.eqv(Cat("m"), Dog("m")) // false (разные типы)
+eq.eqv(Cat("m"), Dog("m")) // false (different types)
 ```
 
-### Covariant (Decoder) - через builder
+### Covariant (Decoder) — via builder
 
 ```scala
 given Decoder[Cat] = ...
 given Decoder[Dog] = ...
 
 val dec = summon[Decoder[Cat | Dog]]
-// Пробует Decoder[Cat], затем Decoder[Dog]
+// Tries Decoder[Cat], then Decoder[Dog]
 ```
 
-### Covariant (Parser) - SAM автоматическая деривация
+### Covariant (Parser) — automatic SAM derivation
 
 ```scala
 trait Parser[+T]:
@@ -226,78 +226,78 @@ given Parser[Cat] = (s: String) => Cat(s)
 given Parser[Dog] = (s: String) => Dog(s)
 
 val p = UnionDeriver.deriveCovariant[Parser, Cat | Dog]
-// Автоматически генерирует класс с fallback-логикой
+// Automatically generates a class with fallback logic
 p.parse("cat:m") // Cat("m")
 p.parse("dog:b") // Dog("b")
 ```
 
-## Покрытие тестами
+## Test coverage
 
-Тесты реорганизованы в отдельные файлы по категориям (30+ сценариев):
+Tests are reorganized into per-category files (30+ scenarios):
 
-### SamTests.scala (3 теста)
+### SamTests.scala (3 tests)
 
-- Контравариантный SAM - `Printer[Int | String]`
-- Ковариантный SAM с fallback - `Parser[Int | Boolean]`
-- Ковариантный SAM с кастомными классами - `Parser[Cat | Dog]`
+- Contravariant SAM — `Printer[Int | String]`
+- Covariant SAM with fallback — `Parser[Int | Boolean]`
+- Covariant SAM with custom classes — `Parser[Cat | Dog]`
 
-### BinaryInstanceTests.scala (3 теста)
+### BinaryInstanceTests.scala (3 tests)
 
-- Бинарный типкласс через Builder - `Eq[Int | String]`
-- Cats Hash interop - `Hash[Int | String | Boolean]`
-- Адаптерная деривация - явное использование `Mirror.SumOf`
+- Binary type-class via Builder — `Eq[Int | String]`
+- Cats Hash interop — `Hash[Int | String | Boolean]`
+- Adapter derivation — explicit use of `Mirror.SumOf`
 
-### BuilderTests.scala (2 теста)
+### BuilderTests.scala (2 tests)
 
-- Кастомный ContravariantInstanceBuilder - `Logger[Int | String | Boolean]`
-- Кастомный CovariantInstanceBuilder - `Factory[Int | String | Boolean]`
+- Custom ContravariantInstanceBuilder — `Logger[Int | String | Boolean]`
+- Custom CovariantInstanceBuilder — `Factory[Int | String | Boolean]`
 
-### AdvancedTypeTests.scala (8 тестов)
+### AdvancedTypeTests.scala (8 tests)
 
-- Singleton типы - `1 | "a" | true`
-- Object-типы - `MyObject1.type | MyObject2.type`
-- Параметризованные трейты - `Container[Int] | Container[String]`
-- Параметризованные типы - `List[Int] | Option[String] | Vector[Int]`
-- Типы с несколькими параметрами - `Either[String, Int] | (Int, String) | Map[String, Int]`
-- Union с Any - `Int | String | Any`
-- LSP с общими методами - `Drawable | (Circle | Square)`
+- Singleton types — `1 | "a" | true`
+- Object types — `MyObject1.type | MyObject2.type`
+- Parametrized traits — `Container[Int] | Container[String]`
+- Parametrized types — `List[Int] | Option[String] | Vector[Int]`
+- Multi-parameter types — `Either[String, Int] | (Int, String) | Map[String, Int]`
+- Union with Any — `Int | String | Any`
+- LSP with shared methods — `Drawable | (Circle | Square)`
 
-### UnionNormalizationTests.scala (5 тестов)
+### UnionNormalizationTests.scala (5 tests)
 
-- Вложенные Union и нормализация - `Int | (String | Boolean)`
-- Нормализация и порядок элементов
-- Стабильность ординалов между вызовами
-- Проверка ошибок для не-Union типов
-- Проверка ошибок для не-SAM типов без builder
+- Nested unions and normalization — `Int | (String | Boolean)`
+- Normalization and element ordering
+- Ordinal stability across invocations
+- Error reporting for non-union types
+- Error reporting for non-SAM types without a builder
 
-### HierarchyTests.scala (4 теста)
+### HierarchyTests.scala (4 tests)
 
-- Иерархия типов - `Shape | Circle`
-- Sealed trait union - `Shape with Circle | Rectangle`
-- Сложная иерархия трейтов - `Animal | (Mammal | (Dog | Cat))`
-- Вложенные Union с трейтами - `Animal | (Plant | (Tree | Flower))`
+- Type hierarchy — `Shape | Circle`
+- Sealed-trait union — `Shape with Circle | Rectangle`
+- Complex trait hierarchy — `Animal | (Mammal | (Dog | Cat))`
+- Nested unions with traits — `Animal | (Plant | (Tree | Flower))`
 
-### InteropTests.scala (6 тестов)
+### InteropTests.scala (6 tests)
 
-- Cats Show interop - `Show[Cat] + Show[Dog] => Show[Cat | Dog]`
-- Cats Eq interop - `Eq[Cat] + Eq[Dog] => Eq[Cat | Dog]`
-- Cats Order interop - `Order[Cat] + Order[Dog] => Order[Cat | Dog]`
-- Cats deep interop - `Order[Int | String | Boolean]`
-- Circe Decoder interop - `Decoder[LocalCat | LocalDog | Int]`
-- Circe Encoder interop - `Encoder[LocalCat | LocalDog | Int]`
+- Cats Show interop — `Show[Cat] + Show[Dog] => Show[Cat | Dog]`
+- Cats Eq interop — `Eq[Cat] + Eq[Dog] => Eq[Cat | Dog]`
+- Cats Order interop — `Order[Cat] + Order[Dog] => Order[Cat | Dog]`
+- Cats deep interop — `Order[Int | String | Boolean]`
+- Circe Decoder interop — `Decoder[LocalCat | LocalDog | Int]`
+- Circe Encoder interop — `Encoder[LocalCat | LocalDog | Int]`
 
-### LargeUnionTests.scala (2 теста)
+### LargeUnionTests.scala (2 tests)
 
-- Большой Union - 15 типов
-- Производительность fallback с несколькими типами
+- Large union — 15 types
+- Fallback performance with multiple types
 
-### MirrorInteropTests.scala (3 теста)
+### MirrorInteropTests.scala (3 tests)
 
-- Взаимодействие с системным Mirror (enum) - `MyEnum | (Cat | Dog)`
-- Scala 3 enum Mirror interop - `StandardEnum | Int`
-- Scala 3 sealed trait Mirror interop - `StandardSealed | String`
+- Interop with the built-in Mirror (enum) — `MyEnum | (Cat | Dog)`
+- Scala 3 enum Mirror interop — `StandardEnum | Int`
+- Scala 3 sealed-trait Mirror interop — `StandardSealed | String`
 
-### RecursiveTests.scala (2 теста)
+### RecursiveTests.scala (2 tests)
 
-- Рекурсивный Union - `Tree = Leaf | Node`
-- Адаптерная деривация с рекурсивными типами - `Serialize[RecursiveTree]`
+- Recursive union — `Tree = Leaf | Node`
+- Adapter derivation with recursive types — `Serialize[RecursiveTree]`

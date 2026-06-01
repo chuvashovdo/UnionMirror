@@ -1,63 +1,63 @@
 # UnionMirror Performance Benchmarks
 
-Этот проект содержит бенчмарки производительности для UnionMirror, использующие JMH (Java Microbenchmark Harness).
+This project contains performance benchmarks for UnionMirror, using JMH (Java Microbenchmark Harness).
 
-## Запуск бенчмарков
+## Running benchmarks
 
-### Запуск всех бенчмарков
+### Run all benchmarks
 
 ```bash
 sbt bench/jmh:run
 ```
 
-### Запуск конкретного бенчмарка
+### Run a specific benchmark
 
 ```bash
 sbt 'bench/jmh:run -prof gc SamDerivationBench'
 ```
 
-### Запуск с определенными параметрами
+### Run with custom parameters
 
 ```bash
 sbt 'bench/jmh:run -wi 5 -i 5 -f 2 -t 1'
 ```
 
-Где:
-- `-wi 5` - количество warmup итераций
-- `-i 5` - количество measurement итераций
-- `-f 2` - количество forks
-- `-t 1` - количество потоков
+Where:
+- `-wi 5` - number of warmup iterations
+- `-i 5` - number of measurement iterations
+- `-f 2` - number of forks
+- `-t 1` - number of threads
 
-## Бенчмарки
+## Benchmarks
 
 ### SamDerivationBench
 
-Тестирует производительность деривации SAM типклассов:
-- Контравариантная деривация (малые и средние union)
-- Ковариантная деривация с try-catch fallback
-- Ковариантная деривация с безопасными типами (Option, Either, Try)
+Measures SAM type-class derivation performance:
+- Contravariant derivation (small and medium unions)
+- Covariant derivation with try/catch fallback
+- Covariant derivation with safe return types (Option, Either, Try)
 
 ### BinaryDerivationBench
 
-Тестирует производительность бинарной деривации через кастомные билдеры:
-- Деривация Eq для малых и средних union
-- Runtime производительность бинарных операций
+Measures binary derivation performance via custom builders:
+- `Eq` derivation for small and medium unions
+- Runtime performance of binary operations
 
 ### LargeUnionBench
 
-Тестирует масштабируемость на больших union типах:
-- Деривация для 5 и 10 типов
-- Runtime производительность для больших union
+Measures scalability on large union types:
+- Derivation for 5 and 10 types
+- Runtime performance for large unions
 
-## Результаты
+## Results
 
-После запуска бенчмарки генерируют отчет в консоли с:
-- Временем компиляции (деривации)
-- Временем выполнения (runtime)
-- Статистикой (среднее, стандартное отклонение и т.д.)
+Each run produces a console report containing:
+- Compilation (derivation) time
+- Runtime execution time
+- Statistics (mean, standard deviation, etc.)
 
-## Интерпретация результатов
+## Interpreting the results
 
-- **Compilation time** - время генерации кода макросом (важно для времени сборки)
-- **Runtime time** - время выполнения операций (важно для производительности приложения)
-- Сравнение try-catch vs folding стратегий для ковариантной деривации
+- **Compilation time** - time spent generating code in the macro (relevant to build time)
+- **Runtime time** - time spent executing operations (relevant to application performance)
+- Comparison of try/catch vs. folding strategies for covariant derivation

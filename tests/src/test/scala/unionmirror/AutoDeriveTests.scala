@@ -52,7 +52,7 @@ final class AutoDeriveTests extends munit.FunSuite:
     assert(!eq.eqv(1, 2))
     assert(!eq.eqv(1, "1"))
 
-  test("invariant SAM: Processor[Int | String] - может сломаться"):
+  test("invariant SAM: Processor[Int | String] - may fail"):
     trait Processor[T]:
       def process(value: T): String
 
@@ -63,7 +63,7 @@ final class AutoDeriveTests extends munit.FunSuite:
     assertEquals(p.process(42), "int:42")
     assertEquals(p.process("hello"), "str:hello")
 
-  test("derive vs deriveContravariant - эквивалентность"):
+  test("derive vs deriveContravariant - equivalence"):
     trait Printer[-T]:
       def print(value: T): String
 
