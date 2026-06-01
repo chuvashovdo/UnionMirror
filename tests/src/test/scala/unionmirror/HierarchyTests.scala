@@ -1,7 +1,6 @@
 package unionmirror
 
 final class HierarchyTests extends munit.FunSuite:
-  import unionmirror.auto.given
 
   test("hierarchy union: Show[Shape | Circle]"):
     trait Shape:
@@ -41,7 +40,7 @@ final class HierarchyTests extends munit.FunSuite:
 
     given showCircle: Show[Circle] = (c: Circle) => s"Circle(r=${c.radius})"
     given showRectangle: Show[Rectangle] = (r: Rectangle) => s"Rect(${r.width}x${r.height})"
-    given showShape: Show[Shape] = (s: Shape) => s"Shape(area=${s.area})"
+    @scala.annotation.unused given showShape: Show[Shape] = (s: Shape) => s"Shape(area=${s.area})"
 
     given m: scala.deriving.Mirror.SumOf[Circle | Rectangle] = UnionMirror.synth[Circle | Rectangle]
     val s = UnionDeriver.deriveContravariant[Show, Circle | Rectangle]
@@ -63,8 +62,8 @@ final class HierarchyTests extends munit.FunSuite:
     given Show[Dog] = (d: Dog) => s"Dog(${d.name},${d.furColor})"
     given Show[Cat] = (c: Cat) => s"Cat(${c.name},${c.furColor})"
     given Show[Bird] = (b: Bird) => s"Bird(${b.name},${b.canFly})"
-    given Show[Mammal] = (m: Mammal) => s"Mammal(${m.name},${m.furColor})"
-    given Show[Animal] = (a: Animal) => s"Animal(${a.name})"
+    @scala.annotation.unused given Show[Mammal] = (m: Mammal) => s"Mammal(${m.name},${m.furColor})"
+    @scala.annotation.unused given Show[Animal] = (a: Animal) => s"Animal(${a.name})"
 
     given m: scala.deriving.Mirror.SumOf[Dog | Cat | Bird] = UnionMirror.synth[Dog | Cat | Bird]
     val s = UnionDeriver.deriveContravariant[Show, Dog | Cat | Bird]
@@ -101,9 +100,9 @@ final class HierarchyTests extends munit.FunSuite:
     given showCat: Show[Cat] = (c: Cat) => s"Cat(${c.species})"
     given showTree: Show[Tree] = (t: Tree) => s"Tree(${t.photosynthesis})"
     given showFlower: Show[Flower] = (f: Flower) => s"Flower(${f.photosynthesis})"
-    given showAnimal: Show[Animal] = (a: Animal) => s"Animal(${a.species})"
-    given showPlant: Show[Plant] = (p: Plant) => s"Plant(${p.photosynthesis})"
-    given showLiving: Show[Living] = (l: Living) => s"Living(${l.isAlive})"
+    @scala.annotation.unused given showAnimal: Show[Animal] = (a: Animal) => s"Animal(${a.species})"
+    @scala.annotation.unused given showPlant: Show[Plant] = (p: Plant) => s"Plant(${p.photosynthesis})"
+    @scala.annotation.unused given showLiving: Show[Living] = (l: Living) => s"Living(${l.isAlive})"
 
     type ComplexUnion = Dog | Cat | Tree | Flower
     given m: scala.deriving.Mirror.SumOf[ComplexUnion] = UnionMirror.synth[ComplexUnion]

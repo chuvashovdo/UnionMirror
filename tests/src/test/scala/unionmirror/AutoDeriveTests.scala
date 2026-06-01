@@ -40,7 +40,7 @@ final class AutoDeriveTests extends munit.FunSuite:
 
     given UnionDeriver.BinaryInstanceBuilder[Eq] =
       new UnionDeriver.BinaryInstanceBuilder[Eq]:
-        def build[T](ordinal: T => Int, elems: List[Eq[Any]]): Eq[T] =
+        def build[T](ordinal: T => Int, elems: IndexedSeq[Eq[Any]]): Eq[T] =
           Eq.instance { (x, y) =>
             val ox = ordinal(x)
             val oy = ordinal(y)
@@ -139,7 +139,7 @@ final class AutoDeriveTests extends munit.FunSuite:
 
     given UnionDeriver.CovariantInstanceBuilder[Factory] =
       new UnionDeriver.CovariantInstanceBuilder[Factory]:
-        def build[T](elems: List[Factory[Any]]): Factory[T] =
+        def build[T](elems: IndexedSeq[Factory[Any]]): Factory[T] =
           new Factory[T]:
             def create(s: String): T =
               import scala.util.control.Breaks.*
@@ -173,7 +173,7 @@ final class AutoDeriveTests extends munit.FunSuite:
 
     given UnionDeriver.BinaryInstanceBuilder[Eq] =
       new UnionDeriver.BinaryInstanceBuilder[Eq]:
-        def build[T](ordinal: T => Int, elems: List[Eq[Any]]): Eq[T] =
+        def build[T](ordinal: T => Int, elems: IndexedSeq[Eq[Any]]): Eq[T] =
           Eq.instance { (x, y) =>
             val ox = ordinal(x)
             val oy = ordinal(y)

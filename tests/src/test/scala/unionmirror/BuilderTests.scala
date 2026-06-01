@@ -1,7 +1,6 @@
 package unionmirror
 
 final class BuilderTests extends munit.FunSuite:
-  import unionmirror.auto.given
 
   test("custom ContravariantInstanceBuilder: Logger[Int | String | Boolean]"):
     trait Logger[-T]:
@@ -36,7 +35,7 @@ final class BuilderTests extends munit.FunSuite:
 
     given UnionDeriver.CovariantInstanceBuilder[Factory] =
       new UnionDeriver.CovariantInstanceBuilder[Factory]:
-        def build[T](elems: List[Factory[Any]]): Factory[T] =
+        def build[T](elems: IndexedSeq[Factory[Any]]): Factory[T] =
           new Factory[T]:
             def create(s: String): T =
               import scala.util.control.Breaks.*

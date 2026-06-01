@@ -34,7 +34,7 @@ final class RecursiveTests extends munit.FunSuite:
 
     given UnionDeriver.BinaryInstanceBuilder[Serialize] =
       new UnionDeriver.BinaryInstanceBuilder[Serialize]:
-        def build[T](ordinal: T => Int, elems: List[Serialize[Any]]): Serialize[T] =
+        def build[T](ordinal: T => Int, elems: IndexedSeq[Serialize[Any]]): Serialize[T] =
           new Serialize[T]:
             def serialize(value: T): String =
               val ov = ordinal(value)

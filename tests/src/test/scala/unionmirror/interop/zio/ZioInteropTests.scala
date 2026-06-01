@@ -34,9 +34,9 @@ class ZioInteropTests extends FunSuite:
   test("derive Hash for Int | String"):
     import unionmirror.interop.zio.instances.given
 
-    given Equal[Int] = Equal.make(_ == _)
+    @scala.annotation.unused given Equal[Int] = Equal.make(_ == _)
     given Hash[Int] = Hash.make(_.hashCode, _ == _)
-    given Equal[String] = Equal.make(_ == _)
+    @scala.annotation.unused given Equal[String] = Equal.make(_ == _)
     given Hash[String] = Hash.make(_.hashCode, _ == _)
 
     val hash = UnionDeriver.derive[Hash, Int | String]

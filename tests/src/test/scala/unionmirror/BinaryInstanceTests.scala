@@ -8,7 +8,7 @@ final class BinaryInstanceTests extends munit.FunSuite:
   test("binary builder: Eq[Int | String]"):
     given UnionDeriver.BinaryInstanceBuilder[Eq] =
       new UnionDeriver.BinaryInstanceBuilder[Eq]:
-        def build[T](ordinal: T => Int, elems: List[Eq[Any]]): Eq[T] =
+        def build[T](ordinal: T => Int, elems: IndexedSeq[Eq[Any]]): Eq[T] =
           Eq.instance { (x, y) =>
             val ox = ordinal(x)
             val oy = ordinal(y)
@@ -30,7 +30,7 @@ final class BinaryInstanceTests extends munit.FunSuite:
 
     given UnionDeriver.BinaryInstanceBuilder[Hash] =
       new UnionDeriver.BinaryInstanceBuilder[Hash]:
-        def build[T](ordinal: T => Int, elems: List[Hash[Any]]): Hash[T] =
+        def build[T](ordinal: T => Int, elems: IndexedSeq[Hash[Any]]): Hash[T] =
           new Hash[T]:
             def hash(x: T): Int =
               val ox = ordinal(x)
@@ -62,13 +62,13 @@ final class BinaryInstanceTests extends munit.FunSuite:
     inline def deriveEq[T](
       using
       m: scala.deriving.Mirror.SumOf[T],
-      builder: UnionDeriver.BinaryInstanceBuilder[MyEq],
+      @scala.annotation.unused builder: UnionDeriver.BinaryInstanceBuilder[MyEq],
     ): MyEq[T] =
       UnionDeriver.deriveBinary[MyEq, T]
 
     given UnionDeriver.BinaryInstanceBuilder[MyEq] =
       new UnionDeriver.BinaryInstanceBuilder[MyEq]:
-        def build[T](ordinal: T => Int, elems: List[MyEq[Any]]): MyEq[T] =
+        def build[T](ordinal: T => Int, elems: IndexedSeq[MyEq[Any]]): MyEq[T] =
           new MyEq[T]:
             def isSame(x: T, y: T): Boolean =
               val ox = ordinal(x)

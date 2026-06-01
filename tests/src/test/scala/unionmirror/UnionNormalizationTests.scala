@@ -43,8 +43,28 @@ final class UnionNormalizationTests extends munit.FunSuite:
     compileErrors("UnionMirror.synth[Int]")
 
   test("UnionDeriver should fail for non-SAM types without builder"):
-    trait NotSAM:
+    @scala.annotation.unused trait NotSAM:
       def foo(i: Int): String
       def bar(s: String): Int
 
     compileErrors("UnionDeriver.deriveContravariant[NotSAM, Int | String]")
+
+  test("parametrized types are not collapsed in normalization (List[Int] | List[String])"):
+    // Even though JVM erasure prevents runtime discrimination, the compile-time
+    // mirror must preserve both elements (regression for an earlier bug where
+    // distinctStable used only typeSymbol and collapsed `List[Int] | List[String]`
+    // to a single entry).
+    @scala.annotation.nowarn("msg=Union elements.*share the same JVM erasure")
+    val m = UnionMirror.synth[List[Int] | List[String]]
+
+    // Both elements are present in MirroredElemTypes — Tuple.Size encodes the
+    // arity at the type level. We verify via a value-level proxy: summoning a
+    // value-of-types tuple over the labels.
+    type Labels = m.MirroredElemLabels
+    val labels = scala.compiletime.constValueTuple[Labels].toList
+    assertEquals(labels.size, 2, s"expected 2 distinct elements, got labels=$labels")
+    assert(labels.toSet.size == 2, s"expected distinct labels, got $labels")
+
+  test("singleton literal types are not collapsed: 1 | 2"):
+    val m = UnionMirror.synth[1 | 2]
+    assert(m.ordinal(1) != m.ordinal(2))
