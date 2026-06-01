@@ -5,6 +5,7 @@ import scala.quoted.*
 import unionmirror.internal.union.UnionKeys
 import unionmirror.internal.union.UnionNormalize
 
+@SuppressWarnings(Array("org.wartremover.warts.Any", "org.wartremover.warts.AsInstanceOf"))
 private[unionmirror] object UnionMirrorImpl:
   def derivedUnionMirrorOf[T: Type](
     using
@@ -25,6 +26,19 @@ private[unionmirror] object UnionMirrorImpl:
     root match
       case _: OrType =>
         val elems = UnionNormalize.normalizeElements(root)
+
+        val parametrized =
+          elems.collect {
+            case t @ AppliedType(ctor, _) => (t, ctor.typeSymbol.fullName)
+          }
+        parametrized.groupBy(_._2).values.filter(_.size > 1).foreach { group =>
+          val names = group.map(_._1.show).mkString(", ")
+          report.warning {
+            s"Union elements [$names] share the same JVM erasure; " +
+              "runtime ordinal dispatch cannot distinguish them and will always select the first match. " +
+              "Use distinct wrapper case classes if you need runtime discrimination."
+          }
+        }
 
         val ets = TupleTypeBuilder.makeTupleType(elems)
         val els = TupleTypeBuilder.makeLabelsType(elems.map(UnionKeys.stableKey))

@@ -11,7 +11,7 @@ import unionmirror.internal.deriver.{
   DeriverClassCreation,
 }
 
-object ContravariantSamImpl:
+private[unionmirror] object ContravariantSamImpl:
   def contravariantSamImpl[F[_]: Type, T: Type](
     m: Expr[Mirror.SumOf[T]]
   )(using

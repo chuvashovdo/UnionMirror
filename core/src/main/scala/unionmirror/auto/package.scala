@@ -1,5 +1,8 @@
-package unionmirror
+package unionmirror.auto
 
-package object auto:
-  export unionmirror.UnionMirror.derived
-  export unionmirror.UnionMirror.synth
+import scala.deriving.Mirror
+
+export unionmirror.UnionMirror.synth
+
+transparent inline given mirrorSumOf: [T] => Mirror.SumOf[T] =
+  ${ unionmirror.internal.UnionMirrorImpl.derivedUnionMirrorOf[T] }

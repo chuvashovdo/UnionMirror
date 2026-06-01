@@ -36,9 +36,9 @@ private[unionmirror] object UnionDeriverImpl:
 
   inline def deriveCovariantSAM[F[_], T](
     using
-    m: Mirror.SumOf[T]
+    @scala.annotation.unused m: Mirror.SumOf[T]
   ): F[T] =
-    ${ CovariantSamImpl.covariantSamImpl[F, T]('m) }
+    ${ CovariantSamImpl.covariantSamImpl[F, T] }
 
   inline def deriveBinaryWithBuilder[F[_], T](
     using

@@ -1,5 +1,6 @@
 package unionmirror.internal.deriver
 
+import scala.annotation.unused
 import scala.deriving.Mirror
 
 import scala.quoted.*
@@ -8,9 +9,10 @@ import unionmirror.UnionDeriver
 
 import unionmirror.internal.deriver.{ DeriverCommon, DeriverInstanceSummoning }
 
-object CovariantWithBuilderImpl:
+@SuppressWarnings(Array("org.wartremover.warts.Any", "org.wartremover.warts.AsInstanceOf"))
+private[unionmirror] object CovariantWithBuilderImpl:
   def covariantWithBuilderImpl[F[_]: Type, T: Type](
-    m: Expr[Mirror.SumOf[T]],
+    @unused _m: Expr[Mirror.SumOf[T]],
     b: Expr[UnionDeriver.CovariantInstanceBuilder[F]],
   )(using
     Quotes
@@ -20,6 +22,7 @@ object CovariantWithBuilderImpl:
 
     '{
       val instances = $instancesExpr
-      val elemsList: List[F[Any]] = instances.map(_.asInstanceOf[F[Any]]).toList
-      $b.build[T](elemsList)
+      val elemsSeq: IndexedSeq[F[Any]] =
+        scala.collection.immutable.ArraySeq.unsafeWrapArray(instances).map(_.asInstanceOf[F[Any]])
+      $b.build[T](elemsSeq)
     }

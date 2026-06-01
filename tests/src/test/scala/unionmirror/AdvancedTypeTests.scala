@@ -123,10 +123,14 @@ final class AdvancedTypeTests extends munit.FunSuite:
 
     given showCircle: Show[Circle] = (c: Circle) => s"${c.draw()}:${c.color()}"
     given showSquare: Show[Square] = (s: Square) => s"${s.draw()}:${s.color()}"
-    given showDrawable: Show[Drawable] = (d: Drawable) => d.draw()
-    given showColorable: Show[Colorable] = (c: Colorable) => c.color()
 
     type DrawableUnion = Circle | Square
     val s = UnionDeriver.deriveContravariant[Show, DrawableUnion]
     assertEquals(s.show(Circle(5.0, "red")), "circle(5.0):red")
     assertEquals(s.show(Square(3.0, "blue")), "square(3.0):blue")
+
+  test("refinement types union: Mirror synthesis for Int { def foo: Int } | String"):
+    type RefinementUnion = Int { def foo: Int } | String
+
+    val mirror = UnionMirror.synth[RefinementUnion]
+    assert(mirror != null, "Mirror should be created successfully")

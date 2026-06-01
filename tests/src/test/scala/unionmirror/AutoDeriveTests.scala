@@ -209,3 +209,12 @@ final class AutoDeriveTests extends munit.FunSuite:
     val show = UnionDeriver.derive[Show, Int | String]
     assertEquals(show.show(42), "int:42")
     assertEquals(show.show("hello"), "str:hello")
+
+  test("automatic Mirror.SumOf via summon"):
+    import scala.deriving.Mirror
+
+    type TestUnion = Int | String | Boolean
+
+    val mirror = summon[Mirror.SumOf[TestUnion]]
+    val ordinals = List(mirror.ordinal(42), mirror.ordinal("hello"), mirror.ordinal(true))
+    assertEquals(ordinals.distinct.size, 3)

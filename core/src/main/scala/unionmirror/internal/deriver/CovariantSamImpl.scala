@@ -1,18 +1,18 @@
 package unionmirror.internal.deriver
 
-import scala.deriving.Mirror
 import scala.quoted.*
-import unionmirror.internal.deriver.{
-  DeriverCommon,
-  DeriverInstanceSummoning,
-  DeriverSamAnalysis,
-  DeriverClassCreation,
-}
+import unionmirror.internal.deriver.{ DeriverCommon, DeriverInstanceSummoning, DeriverSamAnalysis }
 
-object CovariantSamImpl:
+@SuppressWarnings(
+  Array(
+    "org.wartremover.warts.Any",
+    "org.wartremover.warts.IterableOps",
+    "org.wartremover.warts.Throw",
+  )
+)
+private[unionmirror] object CovariantSamImpl:
   def covariantSamImpl[F[_]: Type, T: Type](
-    m: Expr[Mirror.SumOf[T]]
-  )(using
+    using
     Quotes
   ): Expr[F[T]] =
     import quotes.reflect.*
@@ -23,6 +23,18 @@ object CovariantSamImpl:
 
     val ftpe: TypeRepr = TypeRepr.of[F[T]]
 
+    def isSafeType(tpe: TypeRepr): Boolean =
+      tpe match
+        case AppliedType(_, _) =>
+          tpe.typeSymbol.fullName match
+            case "scala.util.Try" => true
+            case "scala.util.Either" => true
+            case "scala.Option" => true
+            case _ => false
+        case _ => false
+
+    val isSafeReturnType = isSafeType(resTpe)
+
     val clsSym =
       Symbol.newClass(
         Symbol.spliceOwner,
@@ -31,16 +43,26 @@ object CovariantSamImpl:
         decls =
           cls =>
             List(
+              Symbol.newVal(
+                cls,
+                "instances",
+                TypeRepr.of[Array[Any]],
+                Flags.Private,
+                Symbol.noSymbol,
+              ),
               Symbol.newMethod(
                 cls,
                 samName,
                 MethodType(List(argName))(_ => List(argTpe), _ => resTpe),
                 Flags.Override,
                 Symbol.noSymbol,
-              )
+              ),
             ),
         selfType = None,
       )
+
+    val instValSym = clsSym.declaredField("instances")
+    val instValDef = ValDef(instValSym, Some(instancesExpr.asTerm))
 
     val methodSym = clsSym.declaredMethod(samName).head
     val methodDef =
@@ -48,16 +70,6 @@ object CovariantSamImpl:
         methodSym,
         {
           case List(List(arg: Term)) =>
-            val instValSym =
-              Symbol.newVal(
-                methodSym,
-                "instances",
-                TypeRepr.of[Array[Any]],
-                Flags.EmptyFlags,
-                Symbol.noSymbol,
-              )
-            val instVal = ValDef(instValSym, Some(instancesExpr.asTerm))
-
             def makeFallback(idx: Int): Term =
               if idx >= elems.size then
                 val msg = s"No instance of ${ftpe.show} could handle the input"
@@ -69,6 +81,32 @@ object CovariantSamImpl:
                 val call = Apply(Select.unique(instTyped, samName), List(arg))
 
                 if idx == elems.size - 1 then call
+                else if isSafeReturnType then
+                  Match(
+                    call,
+                    List(
+                      CaseDef(
+                        Typed(Wildcard(), TypeTree.of[scala.util.Right[?, ?]]),
+                        None,
+                        call,
+                      ),
+                      CaseDef(
+                        Typed(Wildcard(), TypeTree.of[scala.Some[?]]),
+                        None,
+                        call,
+                      ),
+                      CaseDef(
+                        Typed(Wildcard(), TypeTree.of[scala.util.Success[?]]),
+                        None,
+                        call,
+                      ),
+                      CaseDef(
+                        Wildcard(),
+                        None,
+                        makeFallback(idx + 1),
+                      ),
+                    ),
+                  )
                 else
                   Try(
                     call,
@@ -82,7 +120,7 @@ object CovariantSamImpl:
                     None,
                   )
 
-            Some(Block(List(instVal), makeFallback(0)))
+            Some(makeFallback(0))
           case _ => None
         },
       )
@@ -91,7 +129,7 @@ object CovariantSamImpl:
       ClassDef(
         clsSym,
         parents = List(TypeTree.of[Object], TypeTree.of(using ftpe.asType)),
-        body = List(methodDef),
+        body = List(instValDef, methodDef),
       )
 
     val newCls =

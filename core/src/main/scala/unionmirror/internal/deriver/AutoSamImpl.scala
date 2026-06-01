@@ -5,7 +5,7 @@ import scala.quoted.*
 
 import unionmirror.internal.deriver.{ ContravariantSamImpl, CovariantSamImpl, DeriverSamAnalysis }
 
-object AutoSamImpl:
+private[unionmirror] object AutoSamImpl:
   def autoSamImpl[F[_]: Type, T: Type](
     m: Expr[Mirror.SumOf[T]]
   )(using
@@ -17,4 +17,4 @@ object AutoSamImpl:
     val tpe = TypeRepr.of[T]
 
     if tpe =:= argTpe then ContravariantSamImpl.contravariantSamImpl[F, T](m)
-    else CovariantSamImpl.covariantSamImpl[F, T](m)
+    else CovariantSamImpl.covariantSamImpl[F, T]

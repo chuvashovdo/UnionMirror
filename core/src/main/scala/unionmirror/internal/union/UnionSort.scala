@@ -2,6 +2,7 @@ package unionmirror.internal.union
 
 import scala.quoted.*
 
+@SuppressWarnings(Array("org.wartremover.warts.IterableOps"))
 private[unionmirror] object UnionSort:
   def topoSortBySubtypeThenName(
     using
@@ -28,20 +29,11 @@ private[unionmirror] object UnionSort:
     val inDegree = Array.fill(ts.size)(0)
     edges.values.foreach(_.foreach(j => inDegree(j) += 1))
 
-    def pickMinByKey(nodes: List[Int]): Int =
-      nodes match
-        case Nil =>
-          throw new IllegalArgumentException("pickMinByKey called with empty nodes")
-        case head :: tail =>
-          tail.foldLeft(head) { (best, cur) =>
-            if keys(cur) < keys(best) then cur else best
-          }
-
     @annotation.tailrec
     def loop(nodes: List[Int], out: List[Int]): List[Int] =
       if nodes.isEmpty then out
       else
-        val next = pickMinByKey(nodes)
+        val next = nodes.minBy(keys)
         val newlyZero =
           edges(next).filter { j =>
             inDegree(j) -= 1

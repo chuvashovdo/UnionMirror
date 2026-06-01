@@ -11,10 +11,10 @@ object UnionDeriver:
     def build[T](dispatch: T => F[Any]): F[T]
 
   trait CovariantInstanceBuilder[F[_]]:
-    def build[T](elems: List[F[Any]]): F[T]
+    def build[T](elems: IndexedSeq[F[Any]]): F[T]
 
   trait BinaryInstanceBuilder[F[_]]:
-    def build[T](ordinal: T => Int, elems: List[F[Any]]): F[T]
+    def build[T](ordinal: T => Int, elems: IndexedSeq[F[Any]]): F[T]
 
   inline def deriveContravariant[F[_], T](
     using

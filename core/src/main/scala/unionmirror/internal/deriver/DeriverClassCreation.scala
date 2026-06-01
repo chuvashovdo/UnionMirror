@@ -4,7 +4,8 @@ import scala.deriving.Mirror
 
 import scala.quoted.*
 
-object DeriverClassCreation:
+@SuppressWarnings(Array("org.wartremover.warts.IterableOps"))
+private[unionmirror] object DeriverClassCreation:
   def createSamClass[F[_]: Type, T: Type](
     using
     Quotes
@@ -29,17 +30,26 @@ object DeriverClassCreation:
         decls =
           cls =>
             List(
+              Symbol.newVal(
+                cls,
+                "instances",
+                TypeRepr.of[Array[Any]],
+                Flags.Private,
+                Symbol.noSymbol,
+              ),
               Symbol.newMethod(
                 cls,
                 samName,
                 MethodType(List(argName))(_ => List(argTpe), _ => resTpe),
                 Flags.Override,
                 Symbol.noSymbol,
-              )
+              ),
             ),
-
         selfType = None,
       )
+
+    val instValSym = clsSym.declaredField("instances")
+    val instValDef = ValDef(instValSym, Some(instancesExpr.asTerm))
 
     val methodSym = clsSym.declaredMethod(samName).head
     val methodDef =
@@ -47,20 +57,11 @@ object DeriverClassCreation:
         methodSym,
         {
           case List(List(arg: Term)) =>
-            val instValSym =
-              Symbol.newVal(
-                methodSym,
-                "instances",
-                TypeRepr.of[Array[Any]],
-                Flags.EmptyFlags,
-                Symbol.noSymbol,
-              )
-            val instVal = ValDef(instValSym, Some(instancesExpr.asTerm))
             val ord = Apply(Select.unique(m.asTerm, "ordinal"), List(arg))
             val instAt = Apply(Select.unique(Ref(instValSym), "apply"), List(ord))
             val instTyped = Typed(instAt, Inferred(ftpe))
             val call = Apply(Select.unique(instTyped, samName), List(arg))
-            Some(Block(List(instVal), call))
+            Some(call)
           case _ => None
         },
       )
@@ -69,7 +70,7 @@ object DeriverClassCreation:
       ClassDef(
         clsSym,
         parents = List(TypeTree.of[Object], TypeTree.of(using ftpe.asType)),
-        body = List(methodDef),
+        body = List(instValDef, methodDef),
       )
 
     val newCls =

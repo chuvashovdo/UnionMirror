@@ -46,3 +46,39 @@ final class SamTests extends munit.FunSuite:
     assertEquals(p.parse("cat:m"), Cat("m"))
     assertEquals(p.parse("dog:b"), Dog("b"))
     intercept[RuntimeException](p.parse("bird:x"))
+
+  test("covariant SAM: SafeParser with Try return type"):
+    import scala.util.{ Try, Success }
+
+    trait SafeParser[+T]:
+      def parse(s: String): Try[T]
+
+    given SafeParser[Int] = (s: String) => Try(s.toInt)
+
+    given SafeParser[Boolean] = (s: String) => Try(s.toBoolean)
+
+    val p = UnionDeriver.deriveCovariant[SafeParser, Int | Boolean]
+    assertEquals(p.parse("123"), Success(123))
+    assertEquals(p.parse("true"), Success(true))
+    assert(p.parse("not-a-number").isFailure)
+
+  test("covariant SAM: SafeParser with Either return type"):
+    import scala.util.{ Either, Left, Right }
+
+    trait EitherParser[+T]:
+      def parse(s: String): Either[String, T]
+
+    given EitherParser[Int] =
+      (s: String) =>
+        try Right(s.toInt)
+        catch case _: NumberFormatException => Left("Not an int")
+
+    given EitherParser[Boolean] =
+      (s: String) =>
+        try Right(s.toBoolean)
+        catch case _: IllegalArgumentException => Left("Not a boolean")
+
+    val p = UnionDeriver.deriveCovariant[EitherParser, Int | Boolean]
+    assertEquals(p.parse("123"), Right(123))
+    assertEquals(p.parse("true"), Right(true))
+    assertEquals(p.parse("not-a-number"), Left("Not an int"))

@@ -34,10 +34,21 @@ lazy val circeInterop =
       libraryDependencies += Dependencies.io.circe.`circe-core`
     )
 
+lazy val zioInterop =
+  project
+    .in(file("interop-zio"))
+    .dependsOn(core)
+    .settings(name := "union-derivation-zio")
+    .settings(commonSettings)
+    .settings(autoImportSettings)
+    .settings(
+      libraryDependencies += Dependencies.dev.zio.`zio-prelude`
+    )
+
 lazy val tests =
   project
     .in(file("tests"))
-    .dependsOn(core, catsInterop, circeInterop)
+    .dependsOn(core, catsInterop, circeInterop, zioInterop)
     .settings(name := "union-derivation-tests")
     .settings(commonSettings)
     .settings(autoImportSettings)
@@ -52,14 +63,33 @@ lazy val tests =
       )
     )
 
+lazy val bench =
+  project
+    .in(file("bench"))
+    .dependsOn(core, catsInterop, circeInterop)
+    .settings(name := "union-derivation-bench")
+    .settings(commonSettings)
+    .settings(
+      Compile / scalacOptions ~= { opts =>
+        opts.filterNot(_.contains("wartremover"))
+      }
+    )
+    .enablePlugins(JmhPlugin)
+    .settings(
+      libraryDependencies ++= Seq(
+        Dependencies.io.circe.`circe-core`,
+        Dependencies.org.typelevel.`cats-core`,
+      )
+    )
+
 lazy val `unionmirror` =
   project
     .in(file("."))
     .settings(name := "unionmirror")
     .settings(commonSettings)
     .settings(autoImportSettings)
-    .aggregate(core, catsInterop, circeInterop, tests)
-    .dependsOn(core, catsInterop, circeInterop)
+    .aggregate(core, catsInterop, circeInterop, zioInterop, tests)
+    .dependsOn(core, catsInterop, circeInterop, zioInterop)
 
 lazy val commonSettings = {
   lazy val commonScalacOptions =

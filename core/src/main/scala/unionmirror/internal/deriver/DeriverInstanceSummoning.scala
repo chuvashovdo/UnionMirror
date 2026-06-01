@@ -2,7 +2,8 @@ package unionmirror.internal.deriver
 
 import scala.quoted.*
 
-object DeriverInstanceSummoning:
+@SuppressWarnings(Array("org.wartremover.warts.Any"))
+private[unionmirror] object DeriverInstanceSummoning:
   def summonInstances[F[_]: Type](
     using
     Quotes

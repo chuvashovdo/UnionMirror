@@ -2,7 +2,8 @@ package unionmirror.internal.deriver
 
 import scala.quoted.*
 
-object DeriverSamAnalysis:
+@SuppressWarnings(Array("org.wartremover.warts.Any", "org.wartremover.warts.IterableOps"))
+private[unionmirror] object DeriverSamAnalysis:
   def analyzeSam[F[_]: Type, T: Type](
     using
     Quotes
@@ -22,7 +23,7 @@ object DeriverSamAnalysis:
         .distinct
     if abstractMethods.size != 1 then
       report.errorAndAbort {
-        s"${Type.show[F]} is not a SAM typeclass (found ${abstractMethods.size} abstract methods); provide an explicit ContravariantInstanceBuilder"
+        s"${Type.show[F]} is not a SAM typeclass (found ${abstractMethods.size} abstract methods); provide an explicit InstanceBuilder (Contravariant/Covariant/Binary)"
       }
     val sam0 = abstractMethods.head
     val samName = sam0.name
@@ -35,7 +36,5 @@ object DeriverSamAnalysis:
           (mt.paramNames.head, mt.paramTypes.head, mt.resType)
         case _ =>
           report.errorAndAbort(s"Unsupported SAM type for ${Type.show[F]}: ${samTpe0.show}")
-
-    if !(TypeRepr.of[T] <:< argTpe) then ()
 
     (samName, argName, argTpe, resTpe)

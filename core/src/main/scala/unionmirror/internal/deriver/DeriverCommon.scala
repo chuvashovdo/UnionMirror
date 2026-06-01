@@ -4,7 +4,8 @@ import scala.quoted.*
 
 import unionmirror.internal.union.UnionNormalize
 
-object DeriverCommon:
+@SuppressWarnings(Array("org.wartremover.warts.Any"))
+private[unionmirror] object DeriverCommon:
   def getElems[T: Type](
     using
     Quotes

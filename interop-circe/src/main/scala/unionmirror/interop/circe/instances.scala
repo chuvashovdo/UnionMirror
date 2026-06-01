@@ -2,7 +2,7 @@ package unionmirror.interop.circe
 
 import scala.deriving.Mirror
 
-import io.circe.{ Decoder, Encoder, Json }
+import io.circe.{ Decoder, Encoder }
 
 import unionmirror.UnionDeriver
 

@@ -8,7 +8,8 @@ import unionmirror.UnionDeriver
 
 import unionmirror.internal.deriver.{ DeriverCommon, DeriverInstanceSummoning }
 
-object ContravariantWithBuilderImpl:
+@SuppressWarnings(Array("org.wartremover.warts.Any", "org.wartremover.warts.AsInstanceOf"))
+private[unionmirror] object ContravariantWithBuilderImpl:
   def contravariantWithBuilderImpl[F[_]: Type, T: Type](
     m: Expr[Mirror.SumOf[T]],
     b: Expr[UnionDeriver.ContravariantInstanceBuilder[F]],
