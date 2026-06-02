@@ -1,6 +1,8 @@
 package unionmirror
 
-final class SamTests extends munit.FunSuite:
+import scala.annotation.experimental
+
+@experimental final class SamTests extends munit.FunSuite:
   import unionmirror.auto.given
 
   test("contravariant SAM: Printer[Int | String]"):

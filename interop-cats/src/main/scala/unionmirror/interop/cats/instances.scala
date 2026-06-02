@@ -1,16 +1,16 @@
 package unionmirror.interop.cats
 
+import scala.annotation.experimental
 import scala.deriving.Mirror
 
 import cats.{ Eq, Hash, Order, Show }
-
 import unionmirror.UnionDeriver
 
 object instances:
-  inline given [T] => Mirror.SumOf[T] => Show[T] =
+  @experimental inline given showForUnion[T](using Mirror.SumOf[T]): Show[T] =
     UnionDeriver.deriveContravariant[Show, T]
 
-  given UnionDeriver.BinaryInstanceBuilder[Eq] =
+  given eqBuilder: UnionDeriver.BinaryInstanceBuilder[Eq] =
     new UnionDeriver.BinaryInstanceBuilder[Eq]:
       def build[T](ordinal: T => Int, elems: IndexedSeq[Eq[Any]]): Eq[T] =
         new Eq[T]:
@@ -20,10 +20,10 @@ object instances:
             if ox != oy then false
             else elems(ox).eqv(x, y)
 
-  inline given [T] => Mirror.SumOf[T] => Eq[T] =
+  inline given eqForUnion[T](using Mirror.SumOf[T]): Eq[T] =
     UnionDeriver.deriveBinary[Eq, T]
 
-  given UnionDeriver.BinaryInstanceBuilder[Order] =
+  given orderBuilder: UnionDeriver.BinaryInstanceBuilder[Order] =
     new UnionDeriver.BinaryInstanceBuilder[Order]:
       def build[T](ordinal: T => Int, elems: IndexedSeq[Order[Any]]): Order[T] =
         new Order[T]:
@@ -33,10 +33,10 @@ object instances:
             if ox != oy then Integer.compare(ox, oy)
             else elems(ox).compare(x, y)
 
-  inline given [T] => Mirror.SumOf[T] => Order[T] =
+  inline given orderForUnion[T](using Mirror.SumOf[T]): Order[T] =
     UnionDeriver.deriveBinary[Order, T]
 
-  given UnionDeriver.BinaryInstanceBuilder[Hash] =
+  given hashBuilder: UnionDeriver.BinaryInstanceBuilder[Hash] =
     new UnionDeriver.BinaryInstanceBuilder[Hash]:
       def build[T](ordinal: T => Int, elems: IndexedSeq[Hash[Any]]): Hash[T] =
         new Hash[T]:
@@ -49,5 +49,5 @@ object instances:
             if ox != oy then false
             else elems(ox).eqv(x, y)
 
-  inline given [T] => Mirror.SumOf[T] => Hash[T] =
+  inline given hashForUnion[T](using Mirror.SumOf[T]): Hash[T] =
     UnionDeriver.deriveBinary[Hash, T]

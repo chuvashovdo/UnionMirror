@@ -5,7 +5,9 @@ import scala.quoted.*
 import unionmirror.internal.union.UnionKeys
 import unionmirror.internal.union.UnionNormalize
 
-@SuppressWarnings(Array("org.wartremover.warts.Any", "org.wartremover.warts.AsInstanceOf"))
+@SuppressWarnings(
+  Array("unchecked", "org.wartremover.warts.Any", "org.wartremover.warts.AsInstanceOf")
+)
 private[unionmirror] object UnionMirrorImpl:
   def derivedUnionMirrorOf[T: Type](
     using
@@ -27,6 +29,17 @@ private[unionmirror] object UnionMirrorImpl:
       case _: OrType =>
         val elems = UnionNormalize.normalizeElements(root)
 
+        val topTypes = List(TypeRepr.of[Any], TypeRepr.of[AnyRef], TypeRepr.of[Matchable])
+        val offending = elems.filter(e => topTypes.exists(top => e =:= top))
+        if offending.nonEmpty then
+          val names = offending.map(_.show).mkString(", ")
+          report.errorAndAbort {
+            s"Union contains top type(s) [$names]. " +
+              "A union with a top type is equivalent to that top type at the type level " +
+              "(e.g. `Int | String | Any =:= Any`), so a Mirror.SumOf cannot soundly distinguish its members. " +
+              "Remove the top type from the union; derive an instance for it directly if you need total coverage."
+          }
+
         val parametrized =
           elems.collect {
             case t @ AppliedType(ctor, _) => (t, ctor.typeSymbol.fullName)
@@ -40,11 +53,11 @@ private[unionmirror] object UnionMirrorImpl:
           }
         }
 
-        val ets = TupleTypeBuilder.makeTupleType(elems)
-        val els = TupleTypeBuilder.makeLabelsType(elems.map(UnionKeys.stableKey))
+        val ets = TupleTypeBuilder.makeTupleType(elems).asType
+        val els = TupleTypeBuilder.makeLabelsType(elems.map(UnionKeys.stableKey)).asType
 
         (ets, els) match
-          case ('[type etT <: Tuple; etT], '[type elT <: Tuple; elT]) =>
+          case ('[etT], '[elT]) =>
             '{
               val m: Mirror.Sum {
                 type MirroredType = T

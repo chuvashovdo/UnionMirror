@@ -1,11 +1,13 @@
 package unionmirror.internal.deriver
 
+import scala.annotation.experimental
 import scala.deriving.Mirror
 
 import scala.quoted.*
 
 @SuppressWarnings(Array("org.wartremover.warts.IterableOps"))
 private[unionmirror] object DeriverClassCreation:
+  @experimental
   def createSamClass[F[_]: Type, T: Type](
     using
     Quotes

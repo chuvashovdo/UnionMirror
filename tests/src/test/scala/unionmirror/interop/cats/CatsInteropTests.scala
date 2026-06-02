@@ -1,42 +1,53 @@
 package unionmirror.interop.cats
 
+import scala.annotation.experimental
+
 import cats.{ Eq, Order }
 import munit.FunSuite
-import unionmirror.{ Cat, Dog }
 import unionmirror.UnionMirror
 import unionmirror.auto.given
-import unionmirror.interop.cats.instances.given
 
-class CatsInteropTests extends FunSuite:
+case class TestCat(name: String)
+case class TestDog(name: String)
+
+@experimental class CatsInteropTests extends FunSuite:
   test("cats interop: Show[Cat] + Show[Dog] => Show[Cat | Dog]"):
     import cats.Show as CatsShow
-    given CatsShow[Cat] = CatsShow.show(c => s"cat:${c.name}")
-    given CatsShow[Dog] = CatsShow.show(d => s"dog:${d.name}")
+    import unionmirror.interop.cats.instances.showForUnion
 
-    val s = summon[CatsShow[Cat | Dog]]
-    assertEquals(obtained = s.show(Cat("m")), expected = "cat:m")
-    assertEquals(obtained = s.show(Dog("b")), expected = "dog:b")
+    given CatsShow[TestCat] = CatsShow.show(c => s"cat:${c.name}")
+    given CatsShow[TestDog] = CatsShow.show(d => s"dog:${d.name}")
+
+    val s = summon[CatsShow[TestCat | TestDog]]
+    assertEquals(s.show(TestCat("m")), "cat:m")
+    assertEquals(s.show(TestDog("b")), "dog:b")
 
   test("cats interop: Eq[Cat] + Eq[Dog] => Eq[Cat | Dog]"):
-    given Eq[Cat] = Eq.by[Cat, String](_.name)
-    given Eq[Dog] = Eq.by[Dog, String](_.name)
+    import unionmirror.interop.cats.instances.{ eqBuilder, eqForUnion }
 
-    val eq = summon[Eq[Cat | Dog]]
-    assert(eq.eqv(Cat("m"), Cat("m")))
-    assert(!eq.eqv(Cat("m"), Cat("x")))
-    assert(!eq.eqv(Cat("m"), Dog("m")))
-    assert(eq.eqv(Dog("b"), Dog("b")))
+    given Eq[TestCat] = Eq.by[TestCat, String](_.name)
+    given Eq[TestDog] = Eq.by[TestDog, String](_.name)
+
+    val eq = summon[Eq[TestCat | TestDog]]
+    assert(eq.eqv(TestCat("m"), TestCat("m")), "")
+    assert(!eq.eqv(TestCat("m"), TestCat("x")), "")
+    assert(!eq.eqv(TestCat("m"), TestDog("m")), "")
+    assert(eq.eqv(TestDog("b"), TestDog("b")), "")
 
   test("cats interop: Order[Cat] + Order[Dog] => Order[Cat | Dog]"):
-    given Order[Cat] = Order.by[Cat, String](_.name)
-    given Order[Dog] = Order.by[Dog, String](_.name)
+    import unionmirror.interop.cats.instances.{ orderBuilder, orderForUnion }
 
-    val ord = summon[Order[Cat | Dog]]
-    assert(ord.compare(Cat("a"), Cat("b")) < 0)
-    assert(ord.compare(Dog("a"), Dog("b")) < 0)
-    assert(ord.compare(Cat("z"), Dog("a")) < 0)
+    given Order[TestCat] = Order.by[TestCat, String](_.name)
+    given Order[TestDog] = Order.by[TestDog, String](_.name)
+
+    val ord = summon[Order[TestCat | TestDog]]
+    assert(ord.compare(TestCat("a"), TestCat("b")) < 0, "")
+    assert(ord.compare(TestDog("a"), TestDog("b")) < 0, "")
+    assert(ord.compare(TestCat("z"), TestDog("a")) < 0, "")
 
   test("cats deep interop: Order[Int | String | Boolean]"):
+    import unionmirror.interop.cats.instances.{ orderBuilder, orderForUnion }
+
     val m = UnionMirror.synth[Int | String | Boolean]
     val ord = summon[cats.kernel.Order[Int | String | Boolean]]
 

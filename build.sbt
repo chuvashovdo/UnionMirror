@@ -1,7 +1,8 @@
 import Dependencies._
 
-ThisBuild / scalaVersion := "3.8.1"
+ThisBuild / scalaVersion := "3.3.7"
 ThisBuild / versionScheme := Some("early-semver")
+ThisBuild / exportPipelining := false
 
 lazy val core =
   project
@@ -100,9 +101,29 @@ lazy val `unionmirror` =
     .aggregate(core, catsInterop, circeInterop, zioInterop, tests)
     .dependsOn(core, catsInterop, circeInterop, zioInterop)
 
+def ltsScalacOptions(opts: Seq[String]): Seq[String] =
+  opts.filterNot { opt =>
+    opt == "-Ypickle-java" ||
+    opt == "-Ypickle-write" ||
+    opt == "-Xkind-projector" ||
+    opt == "-Wsafe-init" ||
+    opt.contains("/early/") ||
+    opt.contains("/test-early/") ||
+    opt.endsWith("/early.jar")
+  }
+
 lazy val commonSettings = {
   lazy val commonScalacOptions =
     Seq(
+      Compile / scalacOptions ~= ltsScalacOptions,
+      Test / scalacOptions ~= ltsScalacOptions,
+      scalacOptions ++= Seq(
+        "-Wconf:msg=pattern selector should be an instance of Matchable:silent",
+      ),
+      Test / scalacOptions ++= Seq(
+        "-Wconf:msg=the type test for .* cannot be checked at runtime.*:silent",
+        "-Wconf:msg=unused local definition:silent",
+      ),
       Compile / console / scalacOptions := {
         (Compile / console / scalacOptions)
           .value
@@ -125,22 +146,26 @@ lazy val commonSettings = {
   ).reduceLeft(_ ++ _)
 }
 
-lazy val autoImportSettings =
+lazy val autoImportSettings = {
+  val baseImports =
+    Seq(
+      "java.lang",
+      "scala",
+      "scala.Predef",
+      "scala.annotation",
+      "scala.util.chaining",
+    )
+
   Seq(
-    scalacOptions +=
-      Seq(
-        "java.lang",
-        "scala",
-        "scala.Predef",
-        "scala.annotation",
-        "scala.util.chaining",
-      ).mkString(start = "-Yimports:", sep = ",", end = ""),
+    scalacOptions += baseImports.mkString(start = "-Yimports:", sep = ",", end = ""),
+    Test / scalacOptions ~= (_.filterNot(_.startsWith("-Yimports:"))),
     Test / scalacOptions +=
-      Seq(
+      (baseImports ++ Seq(
         "org.scalacheck",
         "org.scalacheck.Prop",
-      ).mkString(start = "-Yimports:", sep = ",", end = ""),
+      )).mkString(start = "-Yimports:", sep = ",", end = ""),
   )
+}
 
 lazy val dependencies =
   Seq(

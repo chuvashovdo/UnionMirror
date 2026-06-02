@@ -1,6 +1,9 @@
 package unionmirror
 
-final class LargeUnionTests extends munit.FunSuite:
+import scala.annotation.experimental
+
+@SuppressWarnings(Array("unused"))
+@experimental final class LargeUnionTests extends munit.FunSuite:
   import unionmirror.auto.given
 
   test("large union: Show[Int | String | Boolean | ... (15 types)]"):

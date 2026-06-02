@@ -1,6 +1,8 @@
 package unionmirror
 
-final class UnionNormalizationTests extends munit.FunSuite:
+import scala.annotation.experimental
+
+@experimental final class UnionNormalizationTests extends munit.FunSuite:
   import unionmirror.auto.given
 
   test("nested union and normalization: Show[Int | (String | Boolean)]"):
@@ -61,7 +63,7 @@ final class UnionNormalizationTests extends munit.FunSuite:
     // arity at the type level. We verify via a value-level proxy: summoning a
     // value-of-types tuple over the labels.
     type Labels = m.MirroredElemLabels
-    val labels = scala.compiletime.constValueTuple[Labels].toList
+    val labels = scala.compiletime.constValueTuple[Labels].productIterator.map(_.toString).toList
     assertEquals(labels.size, 2, s"expected 2 distinct elements, got labels=$labels")
     assert(labels.toSet.size == 2, s"expected distinct labels, got $labels")
 

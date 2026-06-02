@@ -1,6 +1,8 @@
 package unionmirror
 
-final class AutoDeriveTests extends munit.FunSuite:
+import scala.annotation.experimental
+
+@experimental final class AutoDeriveTests extends munit.FunSuite:
   import unionmirror.auto.given
 
   test("derive contravariant SAM: Printer[Int | String]"):
@@ -211,10 +213,8 @@ final class AutoDeriveTests extends munit.FunSuite:
     assertEquals(show.show("hello"), "str:hello")
 
   test("automatic Mirror.SumOf via summon"):
-    import scala.deriving.Mirror
-
     type TestUnion = Int | String | Boolean
 
-    val mirror = summon[Mirror.SumOf[TestUnion]]
+    val mirror = summon[scala.deriving.Mirror.SumOf[TestUnion]]
     val ordinals = List(mirror.ordinal(42), mirror.ordinal("hello"), mirror.ordinal(true))
     assertEquals(ordinals.distinct.size, 3)

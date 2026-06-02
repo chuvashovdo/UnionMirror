@@ -1,6 +1,8 @@
 package unionmirror
 
-final class MirrorInteropTests extends munit.FunSuite:
+import scala.annotation.experimental
+
+@experimental final class MirrorInteropTests extends munit.FunSuite:
   import unionmirror.auto.given
 
   test("system mirror interop: Show[MyEnum | (Cat | Dog)]"):

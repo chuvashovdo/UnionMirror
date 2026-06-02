@@ -3,6 +3,7 @@ package unionmirror.internal.union
 import scala.quoted.*
 
 private[unionmirror] object UnionFlatten:
+  @SuppressWarnings(Array("unchecked"))
   def flattenOr(
     using
     Quotes
@@ -14,6 +15,7 @@ private[unionmirror] object UnionFlatten:
       case OrType(left, right) => flattenOr(left) ::: flattenOr(right)
       case other => stripRefinement(other) :: Nil
 
+  @SuppressWarnings(Array("unchecked"))
   def stripRefinement(
     using
     Quotes

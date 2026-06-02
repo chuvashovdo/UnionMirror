@@ -1,14 +1,15 @@
 package unionmirror.interop.zio
 
+import scala.annotation.experimental
+
 import munit.FunSuite
 import unionmirror.UnionDeriver
 import unionmirror.auto.given
+import unionmirror.interop.zio.instances.given
 import zio.prelude.*
 
-class ZioInteropTests extends FunSuite:
+@experimental class ZioInteropTests extends FunSuite:
   test("derive Equal for Int | String"):
-    import unionmirror.interop.zio.instances.given
-
     given Equal[Int] = Equal.make(_ == _)
     given Equal[String] = Equal.make(_ == _)
 
@@ -19,8 +20,6 @@ class ZioInteropTests extends FunSuite:
     assert(eq.equal("a", "a"))
 
   test("derive Equal for Int | String | Boolean"):
-    import unionmirror.interop.zio.instances.given
-
     given Equal[Int] = Equal.make(_ == _)
     given Equal[String] = Equal.make(_ == _)
     given Equal[Boolean] = Equal.make(_ == _)
@@ -32,8 +31,6 @@ class ZioInteropTests extends FunSuite:
     assert(eq.equal(true, true))
 
   test("derive Hash for Int | String"):
-    import unionmirror.interop.zio.instances.given
-
     @scala.annotation.unused given Equal[Int] = Equal.make(_ == _)
     given Hash[Int] = Hash.make(_.hashCode, _ == _)
     @scala.annotation.unused given Equal[String] = Equal.make(_ == _)

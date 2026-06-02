@@ -1,6 +1,8 @@
 package unionmirror
 
-final class AdvancedTypeTests extends munit.FunSuite:
+import scala.annotation.experimental
+
+@experimental final class AdvancedTypeTests extends munit.FunSuite:
   import unionmirror.auto.given
 
   test("singleton types union: Show[1 | 'a' | true]"):
@@ -87,19 +89,15 @@ final class AdvancedTypeTests extends munit.FunSuite:
     assertEquals(s.show((1, "a")), "(1,a)")
     assertEquals(s.show(Map("x" -> 1)), "Map(1)")
 
-  test("union with Any: Show[Int | String | Any]"):
-    trait Show[-T]:
-      def show(t: T): String
+  test("union with top type is rejected: Mirror.SumOf[Int | String | Any]"):
+    val errAny = compileErrors("UnionMirror.synth[Int | String | Any]")
+    assert(errAny.contains("top type"), s"expected rejection of top type, got: $errAny")
 
-    given showInt: Show[Int] = (i: Int) => s"int:$i"
-    given showString: Show[String] = (s: String) => s"str:$s"
-    given showAny: Show[Any] = (a: Any) => s"any:$a"
+    val errAnyRef = compileErrors("UnionMirror.synth[Int | String | AnyRef]")
+    assert(errAnyRef.nonEmpty, s"expected rejection of AnyRef, got: $errAnyRef")
 
-    given m: scala.deriving.Mirror.SumOf[Int | String | Any] = UnionMirror.synth[Int | String | Any]
-    val s = UnionDeriver.deriveContravariant[Show, Int | String | Any]
-    assertEquals(s.show(42), "int:42")
-    assertEquals(s.show("hello"), "str:hello")
-    assertEquals(s.show(true), "any:true")
+    val errMatchable = compileErrors("UnionMirror.synth[Int | String | Matchable]")
+    assert(errMatchable.nonEmpty, s"expected rejection of Matchable, got: $errMatchable")
 
   test("LSP with common methods: Show[Drawable | (Circle | Square))]"):
     trait Show[-T]:
@@ -133,4 +131,4 @@ final class AdvancedTypeTests extends munit.FunSuite:
     type RefinementUnion = Int { def foo: Int } | String
 
     val mirror = UnionMirror.synth[RefinementUnion]
-    assert(mirror != null, "Mirror should be created successfully")
+    assertEquals(mirror.ordinal("ok"), 0)

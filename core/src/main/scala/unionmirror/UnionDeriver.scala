@@ -1,5 +1,6 @@
 package unionmirror
 
+import scala.annotation.experimental
 import scala.compiletime
 import scala.compiletime.summonFrom
 import scala.deriving.Mirror
@@ -16,7 +17,7 @@ object UnionDeriver:
   trait BinaryInstanceBuilder[F[_]]:
     def build[T](ordinal: T => Int, elems: IndexedSeq[F[Any]]): F[T]
 
-  inline def deriveContravariant[F[_], T](
+  @experimental inline def deriveContravariant[F[_], T](
     using
     m: Mirror.SumOf[T]
   ): F[T] =
@@ -27,7 +28,7 @@ object UnionDeriver:
         UnionDeriverImpl.deriveContravariantSAM[F, T](using m)
     }
 
-  inline def deriveCovariant[F[_], T](
+  @experimental inline def deriveCovariant[F[_], T](
     using
     m: Mirror.SumOf[T]
   ): F[T] =
@@ -49,7 +50,7 @@ object UnionDeriver:
         compiletime.error("Binary derivation requires an explicit BinaryInstanceBuilder")
     }
 
-  inline def derive[F[_], T](
+  @experimental inline def derive[F[_], T](
     using
     m: Mirror.SumOf[T]
   ): F[T] =

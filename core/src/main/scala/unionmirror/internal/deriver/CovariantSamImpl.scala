@@ -1,5 +1,6 @@
 package unionmirror.internal.deriver
 
+import scala.annotation.experimental
 import scala.quoted.*
 import unionmirror.internal.deriver.{ DeriverCommon, DeriverInstanceSummoning, DeriverSamAnalysis }
 
@@ -11,6 +12,7 @@ import unionmirror.internal.deriver.{ DeriverCommon, DeriverInstanceSummoning, D
   )
 )
 private[unionmirror] object CovariantSamImpl:
+  @experimental
   def covariantSamImpl[F[_]: Type, T: Type](
     using
     Quotes
@@ -23,6 +25,7 @@ private[unionmirror] object CovariantSamImpl:
 
     val ftpe: TypeRepr = TypeRepr.of[F[T]]
 
+    @SuppressWarnings(Array("unchecked"))
     def isSafeType(tpe: TypeRepr): Boolean =
       tpe match
         case AppliedType(_, _) =>

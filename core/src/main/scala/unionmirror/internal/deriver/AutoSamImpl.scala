@@ -1,11 +1,13 @@
 package unionmirror.internal.deriver
 
+import scala.annotation.experimental
 import scala.deriving.Mirror
 import scala.quoted.*
 
 import unionmirror.internal.deriver.{ ContravariantSamImpl, CovariantSamImpl, DeriverSamAnalysis }
 
 private[unionmirror] object AutoSamImpl:
+  @experimental
   def autoSamImpl[F[_]: Type, T: Type](
     m: Expr[Mirror.SumOf[T]]
   )(using

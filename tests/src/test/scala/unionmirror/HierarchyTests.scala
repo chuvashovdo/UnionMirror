@@ -1,6 +1,8 @@
 package unionmirror
 
-final class HierarchyTests extends munit.FunSuite:
+import scala.annotation.experimental
+
+@experimental final class HierarchyTests extends munit.FunSuite:
 
   test("hierarchy union: Show[Shape | Circle]"):
     trait Shape:

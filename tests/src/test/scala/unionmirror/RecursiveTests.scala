@@ -1,6 +1,8 @@
 package unionmirror
 
-final class RecursiveTests extends munit.FunSuite:
+import scala.annotation.experimental
+
+@experimental final class RecursiveTests extends munit.FunSuite:
   import unionmirror.auto.given
 
   test("recursive union: Show[Tree]"):
@@ -12,7 +14,7 @@ final class RecursiveTests extends munit.FunSuite:
     type Tree = Leaf | Node
 
     given Show[Leaf] = (l: Leaf) => s"L(${l.value})"
-    given showNode: Show[Node]:
+    given showNode: Show[Node] with
       def show(n: Node): String =
         val s = summon[Show[Tree]]
         s"N(${s.show(n.left)}, ${s.show(n.right)})"

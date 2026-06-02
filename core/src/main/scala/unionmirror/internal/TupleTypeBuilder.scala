@@ -8,27 +8,19 @@ private[unionmirror] object TupleTypeBuilder:
     Quotes
   )(
     ts: List[quotes.reflect.TypeRepr]
-  ): Type[?] =
-    ts match
-      case Nil => Type.of[EmptyTuple]
-      case head :: tail =>
-        head.asType match
-          case '[ht] =>
-            makeTupleType(tail) match
-              case '[type tt <: Tuple; tt] => Type.of[ht *: tt]
+  ): quotes.reflect.TypeRepr =
+    import quotes.reflect.*
+    ts.foldRight(TypeRepr.of[EmptyTuple]) { (head, tail) =>
+      TypeRepr.of[*:].appliedTo(List(head, tail))
+    }
 
   def makeLabelsType(
     using
     Quotes
   )(
     labels: List[String]
-  ): Type[?] =
+  ): quotes.reflect.TypeRepr =
     import quotes.reflect.*
-    labels match
-      case Nil => Type.of[EmptyTuple]
-      case head :: tail =>
-        val headT = ConstantType(StringConstant(head)).asType
-        headT match
-          case '[ht] =>
-            makeLabelsType(tail) match
-              case '[type tt <: Tuple; tt] => Type.of[ht *: tt]
+    labels.foldRight(TypeRepr.of[EmptyTuple]) { (head, tail) =>
+      TypeRepr.of[*:].appliedTo(List(ConstantType(StringConstant(head)), tail))
+    }

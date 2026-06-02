@@ -1,9 +1,9 @@
 package unionmirror.interop.circe
 
+import scala.annotation.experimental
 import scala.deriving.Mirror
 
 import io.circe.{ Decoder, Encoder }
-
 import unionmirror.UnionDeriver
 
 @SuppressWarnings(Array("org.wartremover.warts.Any", "org.wartremover.warts.AsInstanceOf"))
@@ -16,7 +16,7 @@ object instances:
           enc.apply(t)
         }
 
-  inline given [T] => Mirror.SumOf[T] => Encoder[T] =
+  @experimental inline given encoderForUnion[T](using Mirror.SumOf[T]): Encoder[T] =
     UnionDeriver.deriveContravariant[Encoder, T]
 
   given UnionDeriver.CovariantInstanceBuilder[Decoder] =
@@ -47,5 +47,5 @@ object instances:
           loop(0)
         }
 
-  inline given [T] => Mirror.SumOf[T] => Decoder[T] =
+  @experimental inline given decoderForUnion[T](using Mirror.SumOf[T]): Decoder[T] =
     UnionDeriver.deriveCovariant[Decoder, T]

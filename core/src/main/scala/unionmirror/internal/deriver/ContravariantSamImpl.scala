@@ -1,5 +1,6 @@
 package unionmirror.internal.deriver
 
+import scala.annotation.experimental
 import scala.deriving.Mirror
 
 import scala.quoted.*
@@ -12,6 +13,7 @@ import unionmirror.internal.deriver.{
 }
 
 private[unionmirror] object ContravariantSamImpl:
+  @experimental
   def contravariantSamImpl[F[_]: Type, T: Type](
     m: Expr[Mirror.SumOf[T]]
   )(using

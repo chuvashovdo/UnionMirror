@@ -16,6 +16,13 @@ with the `early-semver` scheme.
 
 ### Changed
 
+- **BREAKING**: unions containing a top type (`Any`, `AnyRef`/`Object`,
+  `Matchable`) are now rejected at compile time. Such a union is equivalent
+  to the top type itself (`Int | String | Any =:= Any`), so a
+  `Mirror.SumOf` could not soundly distinguish its members; the previous
+  "`Any` as fallback" behaviour relied on the compiler not collapsing the
+  hand-written union and was unsound. Derive an instance for the top type
+  directly if you need total coverage.
 - **BREAKING**: `UnionDeriver.CovariantInstanceBuilder.build` and
   `UnionDeriver.BinaryInstanceBuilder.build` now take `IndexedSeq[F[Any]]`
   instead of `List[F[Any]]`. This gives `O(1)` element access in builder

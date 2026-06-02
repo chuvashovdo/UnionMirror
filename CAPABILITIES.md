@@ -108,14 +108,7 @@ type ParamUnion = List[Int] | Option[String] | Vector[Int]
 type MultiParamUnion = Either[String, Int] | (Int, String) | Map[String, Int]
 ```
 
-#### 2.5 Union with `Any`
-
-```scala
-type AnyUnion = Int | String | Any
-// The instance for Any is used as a fallback
-```
-
-#### 2.6 Parametrized traits
+#### 2.5 Parametrized traits
 
 ```scala
 trait Container[+A]:
@@ -316,6 +309,7 @@ See [`bench/BENCHMARK_RESULTS.md`](../bench/BENCHMARK_RESULTS.md) for detailed r
 
 - Unions with higher-kinded parameters (e.g. `List[_] | Option[_]`)
 - Unions with path-dependent types
+- Unions containing a top type (`Any`, `AnyRef`/`Object`, `Matchable`). Such a union is equivalent to that top type (`Int | String | Any =:= Any`), so a `Mirror.SumOf` cannot soundly distinguish its members. The macro rejects it with a compile error; derive an instance for the top type directly if you need total coverage.
 
 **Erasure collisions for parametrized types (a fundamental JVM limitation):**
 

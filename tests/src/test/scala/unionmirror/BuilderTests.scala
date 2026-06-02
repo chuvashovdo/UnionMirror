@@ -1,6 +1,8 @@
 package unionmirror
 
-final class BuilderTests extends munit.FunSuite:
+import scala.annotation.experimental
+
+@experimental final class BuilderTests extends munit.FunSuite:
 
   test("custom ContravariantInstanceBuilder: Logger[Int | String | Boolean]"):
     trait Logger[-T]:

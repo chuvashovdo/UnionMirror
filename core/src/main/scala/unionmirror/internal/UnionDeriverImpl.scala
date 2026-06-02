@@ -1,5 +1,6 @@
 package unionmirror.internal
 
+import scala.annotation.experimental
 import scala.deriving.Mirror
 import scala.quoted.*
 
@@ -21,7 +22,7 @@ private[unionmirror] object UnionDeriverImpl:
   ): F[T] =
     ${ ContravariantWithBuilderImpl.contravariantWithBuilderImpl[F, T]('m, 'b) }
 
-  inline def deriveContravariantSAM[F[_], T](
+  @experimental inline def deriveContravariantSAM[F[_], T](
     using
     m: Mirror.SumOf[T]
   ): F[T] =
@@ -34,7 +35,7 @@ private[unionmirror] object UnionDeriverImpl:
   ): F[T] =
     ${ CovariantWithBuilderImpl.covariantWithBuilderImpl[F, T]('m, 'b) }
 
-  inline def deriveCovariantSAM[F[_], T](
+  @experimental inline def deriveCovariantSAM[F[_], T](
     using
     @scala.annotation.unused m: Mirror.SumOf[T]
   ): F[T] =
@@ -47,7 +48,7 @@ private[unionmirror] object UnionDeriverImpl:
   ): F[T] =
     ${ BinaryWithBuilderImpl.binaryWithBuilderImpl[F, T]('m, 'b) }
 
-  inline def deriveAutoSAM[F[_], T](
+  @experimental inline def deriveAutoSAM[F[_], T](
     using
     m: Mirror.SumOf[T]
   ): F[T] =

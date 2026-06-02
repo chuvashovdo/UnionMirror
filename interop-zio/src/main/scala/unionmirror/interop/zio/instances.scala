@@ -16,7 +16,7 @@ object instances:
           ox == oy && elems(ox).equal(x, y)
         }
 
-  inline given [T] => Mirror.SumOf[T] => Equal[T] =
+  inline given equalForUnion[T](using Mirror.SumOf[T]): Equal[T] =
     UnionDeriver.deriveBinary[Equal, T]
 
   given UnionDeriver.BinaryInstanceBuilder[Hash] =
@@ -33,5 +33,5 @@ object instances:
             ox == oy && elems(ox).equal(x, y),
         )
 
-  inline given [T] => Mirror.SumOf[T] => Hash[T] =
+  inline given hashForUnion[T](using Mirror.SumOf[T]): Hash[T] =
     UnionDeriver.deriveBinary[Hash, T]
