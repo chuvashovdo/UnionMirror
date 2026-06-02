@@ -3,11 +3,12 @@
 ## Test Environment
 
 - **JMH Version**: 1.37
-- **JVM**: OpenJDK 17.0.18, 64-Bit Server VM
-- **Scala Version**: 3.8.1
+- **JVM**: OpenJDK 17.0.19, 64-Bit Server VM
+- **Scala Version**: 3.3.7 (LTS)
 - **Benchmark Mode**: Average Time (time/op)
 - **Warmup**: 1 iteration, 10 seconds each
 - **Measurement**: 1 iteration, 10 seconds each
+- **Forks**: 1
 
 ## Note on what is being measured
 
@@ -26,28 +27,28 @@ SAM typeclass derivation performance (contravariant and covariant).
 
 #### Synthesized-instance construction (runtime allocation cost)
 
-| Benchmark                                   | Score | Unit  |
-| ------------------------------------------- | ----- | ----- |
-| deriveContravariantSmall (2 types)          | 2.909 | ns/op |
-| deriveContravariantMedium (3 types)         | 2.915 | ns/op |
-| deriveCovariantSmall (2 types)              | 1.296 | ns/op |
-| deriveCovariantMedium (3 types)             | 1.347 | ns/op |
-| deriveCovariantSafeSmall (2 types, Option)  | 1.283 | ns/op |
-| deriveCovariantSafeMedium (3 types, Option) | 1.356 | ns/op |
+| Benchmark                                   | Score  | Unit  |
+| ------------------------------------------- | ------ | ----- |
+| deriveContravariantSmall (2 types)          | 8.100  | ns/op |
+| deriveContravariantMedium (3 types)         | 10.154 | ns/op |
+| deriveCovariantSmall (2 types)              | 8.815  | ns/op |
+| deriveCovariantMedium (3 types)             | 8.949  | ns/op |
+| deriveCovariantSafeSmall (2 types, Option)  | 8.217  | ns/op |
+| deriveCovariantSafeMedium (3 types, Option) | 9.960  | ns/op |
 
 #### Runtime Performance
 
 | Benchmark                  | Score  | Unit  |
 | -------------------------- | ------ | ----- |
-| runtimeContravariantSmall  | 9.467  | ns/op |
-| runtimeContravariantMedium | 11.534 | ns/op |
+| runtimeContravariantSmall  | 5.233  | ns/op |
+| runtimeContravariantMedium | 10.461 | ns/op |
 
 **Key Findings:**
 
-- SAM derivation is extremely fast: **1-3 nanoseconds**
-- Covariant derivation is slightly faster than contravariant
+- Synthesized-instance construction is fast: **~8-10 nanoseconds**
+- Covariant and contravariant derivation are comparable
 - Safe return types (Option) have minimal overhead
-- Runtime overhead is minimal: **~10 nanoseconds**
+- Runtime overhead is minimal: **~5-10 nanoseconds**
 
 ### BinaryDerivationBench
 
@@ -57,19 +58,19 @@ Binary typeclass derivation performance (Eq, Hash, etc.).
 
 | Benchmark                    | Score  | Unit  |
 | ---------------------------- | ------ | ----- |
-| deriveBinarySmall (2 types)  | 24.883 | ns/op |
-| deriveBinaryMedium (3 types) | 29.529 | ns/op |
+| deriveBinarySmall (2 types)  | 16.470 | ns/op |
+| deriveBinaryMedium (3 types) | 16.480 | ns/op |
 
 #### Runtime Performance
 
 | Benchmark           | Score | Unit  |
 | ------------------- | ----- | ----- |
-| runtimeBinarySmall  | 2.193 | ns/op |
-| runtimeBinaryMedium | 2.190 | ns/op |
+| runtimeBinarySmall  | 2.040 | ns/op |
+| runtimeBinaryMedium | 1.974 | ns/op |
 
 **Key Findings:**
 
-- Binary derivation is slightly slower than SAM: **25-30 nanoseconds**
+- Binary derivation costs **~16 nanoseconds**
 - Runtime performance is excellent: **~2 nanoseconds**
 - The additional complexity of binary operations is handled efficiently
 
@@ -79,22 +80,22 @@ Scalability with large union types.
 
 #### Compilation Time (Derivation)
 
-| Benchmark                | Score | Unit         |
-| ------------------------ | ----- | ------------ |
-| deriveUnion5 (5 types)   | 0.003 | us/op (3 ns) |
-| deriveUnion10 (10 types) | 0.003 | us/op (3 ns) |
+| Benchmark                | Score | Unit          |
+| ------------------------ | ----- | ------------- |
+| deriveUnion5 (5 types)   | 0.013 | us/op (13 ns) |
+| deriveUnion10 (10 types) | 0.022 | us/op (22 ns) |
 
 #### Runtime Performance
 
-| Benchmark      | Score | Unit          |
-| -------------- | ----- | ------------- |
-| runtimeUnion5  | 0.014 | us/op (14 ns) |
-| runtimeUnion10 | 0.022 | us/op (22 ns) |
+| Benchmark      | Score | Unit         |
+| -------------- | ----- | ------------ |
+| runtimeUnion5  | 0.005 | us/op (5 ns) |
+| runtimeUnion10 | 0.006 | us/op (6 ns) |
 
 **Key Findings:**
 
-- Derivation time remains constant at **3 nanoseconds** even for 10 types
-- Runtime scales linearly with union size: **14-22 nanoseconds**
+- Synthesized-instance construction stays low: **13-22 nanoseconds** for 5-10 types
+- Runtime is **~5-6 nanoseconds** and effectively flat across union size
 - Excellent scalability for large unions
 
 ## Overall Assessment
@@ -110,9 +111,9 @@ expansion cost; profile `sbt clean compile` for that.
 
 **Excellent runtime performance:**
 
-- Contravariant operations: **~10 ns**
+- Contravariant operations: **~5-10 ns**
 - Binary operations: **~2 ns**
-- Large unions: **14-22 ns**
+- Large unions: **~5-6 ns**
 
 All operations are in the nanosecond range, which is **negligible overhead** for typical applications.
 

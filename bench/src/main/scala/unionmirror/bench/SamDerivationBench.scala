@@ -3,10 +3,12 @@ package unionmirror.bench
 import org.openjdk.jmh.annotations.*
 import unionmirror.UnionDeriver
 import unionmirror.auto.given
+import scala.annotation.experimental
 import scala.compiletime.uninitialized
 
 import scala.deriving.Mirror
 
+@experimental
 @State(Scope.Thread)
 @BenchmarkMode(Array(Mode.AverageTime))
 @OutputTimeUnit(java.util.concurrent.TimeUnit.NANOSECONDS)

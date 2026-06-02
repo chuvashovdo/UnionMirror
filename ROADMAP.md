@@ -20,12 +20,12 @@
 - ✅ JMH benchmarks (see `bench/BENCHMARK_RESULTS.md`)
 - ✅ Tests reorganized into per-category files (40+ scenarios)
 - ✅ Capability and limitation documentation (CAPABILITIES.md)
+- ✅ Scala 3.3 LTS support (current version: 3.3.7)
 
 **See also:** [CAPABILITIES.md](CAPABILITIES.md) — a detailed description of the library's capabilities, limitations and known issues.
 
 ### Plans:
 
-- 📋 Scala 3.4+ LTS support (current version: 3.8.1)
 - 📋 Additional interop modules (fs2, scodec)
 - 📋 Artifact publishing (Maven Central / Sonatype)
 - 📋 Research into multi-method derivation without builders
@@ -259,7 +259,7 @@ Tests are reorganized into per-category files (30+ scenarios):
 - Parametrized traits — `Container[Int] | Container[String]`
 - Parametrized types — `List[Int] | Option[String] | Vector[Int]`
 - Multi-parameter types — `Either[String, Int] | (Int, String) | Map[String, Int]`
-- Union with Any — `Int | String | Any`
+- Union with a top type is rejected — `Int | String | Any`
 - LSP with shared methods — `Drawable | (Circle | Square)`
 
 ### UnionNormalizationTests.scala (5 tests)

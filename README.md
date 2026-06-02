@@ -2,7 +2,14 @@
 
 Scala 3 library for deriving type-class instances over **union types** (`A | B | C`) via synthesized `Mirror.SumOf`.
 
-[![Scala 3](https://img.shields.io/badge/Scala-3.8%2B-red)](https://www.scala-lang.org/)
+[![Scala 3](https://img.shields.io/badge/Scala-3.3.7%20LTS-red)](https://www.scala-lang.org/)
+
+> **Experimental APIs.** The automatic SAM derivation methods
+> (`UnionDeriver.deriveContravariant`, `deriveCovariant`, `derive`) are marked
+> `@experimental`, so call sites must opt in — either annotate the enclosing
+> scope with `@scala.annotation.experimental` or compile with the
+> `-experimental` flag. `UnionMirror.synth` and the builder-based derivations
+> (`deriveBinary`, `*InstanceBuilder`) are stable and need no opt-in.
 
 ## Features
 
@@ -56,6 +63,9 @@ summon[Mirror.SumOf[Int | String]]
 import unionmirror.{ UnionDeriver, auto }
 import unionmirror.auto.given
 
+import scala.annotation.experimental
+
+@experimental // deriveContravariant is @experimental
 trait Printer[-T]:
   def print(value: T): String
 
@@ -146,6 +156,7 @@ Not supported / partial:
 - Path-dependent types.
 - Refinement types are accepted but the refinement is stripped (e.g. `Int { def foo: Int }` is treated as `Int`).
 - For non-SAM type-classes you must supply the matching `*InstanceBuilder`.
+- Unions containing a top type (`Any`, `AnyRef`/`Object`, `Matchable`) are rejected at compile time, since `Int | String | Any =:= Any` and a `Mirror.SumOf` cannot soundly distinguish its members.
 - **JVM erasure collisions**: `List[Int] | List[String]` (and similar parametrized unions sharing a type constructor) are preserved at compile time but cannot be distinguished by `mirror.ordinal(...)` at runtime — the macro emits a warning. Use wrapper case classes when runtime discrimination is required. Singleton literal unions (`1 | 2`, `"a" | "b"`) are unaffected.
 
 ## Building
