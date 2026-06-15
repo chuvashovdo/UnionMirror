@@ -17,15 +17,19 @@ Suitable for type-classes of the form `F[-T]` (e.g. `Show`, `Encoder`, `Logger`)
 **Works automatically for SAM type-classes:**
 
 ```scala
-trait Printer[-T]:
-  def print(value: T): String
+import scala.annotation.experimental
 
-given Printer[Int] = (value: Int) => s"int:$value"
-given Printer[String] = (value: String) => s"str:$value"
+@experimental
+object PrinterDemo:
+  trait Printer[-T]:
+    def print(value: T): String
 
-val p = UnionDeriver.deriveContravariant[Printer, Int | String]
-p.print(42) // "int:42"
-p.print("hello") // "str:hello"
+  given Printer[Int] = (value: Int) => s"int:$value"
+  given Printer[String] = (value: String) => s"str:$value"
+
+  val p = UnionDeriver.deriveContravariant[Printer, Int | String]
+  p.print(42) // "int:42"
+  p.print("hello") // "str:hello"
 ```
 
 **Custom builder support:**
@@ -115,6 +119,16 @@ trait Container[+A]:
   def value: A
 
 type ContUnion = IntContainer | StringContainer | BooleanContainer
+```
+
+#### 2.6 Applied higher-kinded aliases
+
+```scala
+import unionmirror.UnionMirror
+
+type Hkd[A] = List[A] | Int
+
+val m = UnionMirror.synth[Hkd[String]]
 ```
 
 ### 3. Type hierarchies and LSP
@@ -307,7 +321,7 @@ See [`bench/BENCHMARK_RESULTS.md`](../bench/BENCHMARK_RESULTS.md) for detailed r
 
 **Not supported:**
 
-- Unions with higher-kinded parameters (e.g. `List[_] | Option[_]`)
+- Unions with higher-kinded parameters without application (e.g. `List[_] | Option[_]`)
 - Unions with path-dependent types
 - Unions containing a top type (`Any`, `AnyRef`/`Object`, `Matchable`). Such a union is equivalent to that top type (`Int | String | Any =:= Any`), so a `Mirror.SumOf` cannot soundly distinguish its members. The macro rejects it with a compile error; derive an instance for the top type directly if you need total coverage.
 

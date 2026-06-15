@@ -65,16 +65,17 @@ import unionmirror.auto.given
 
 import scala.annotation.experimental
 
-@experimental // deriveContravariant is @experimental
-trait Printer[-T]:
-  def print(value: T): String
+@experimental
+object PrinterDemo:
+  trait Printer[-T]:
+    def print(value: T): String
 
-given Printer[Int]    = i => s"int:$i"
-given Printer[String] = s => s"str:$s"
+  given Printer[Int]    = i => s"int:$i"
+  given Printer[String] = s => s"str:$s"
 
-val p = UnionDeriver.deriveContravariant[Printer, Int | String]
-p.print(42)      // "int:42"
-p.print("hello") // "str:hello"
+  val p = UnionDeriver.deriveContravariant[Printer, Int | String]
+  p.print(42)      // "int:42"
+  p.print("hello") // "str:hello"
 ```
 
 ### Covariant SAM (auto fallback)
@@ -146,13 +147,14 @@ Supported:
 
 - Singleton/literal unions (`1 | "a" | true`).
 - Parametrized types (`List[Int] | Option[String]`).
+- Applied higher-kinded aliases like `type Hkd[A] = List[A] | Int`.
 - Multi-param types (`Either[A, B] | (A, B) | Map[A, B]`).
 - Object types and `enum` / `sealed trait` mirrors mixed into unions.
 - Recursive unions and trait hierarchies (LSP picks the most specific instance).
 
 Not supported / partial:
 
-- Higher-kinded params in unions (`List[_] | Option[_]`).
+- Higher-kinded params in unions without application (`List[_] | Option[_]`).
 - Path-dependent types.
 - Refinement types are accepted but the refinement is stripped (e.g. `Int { def foo: Int }` is treated as `Int`).
 - For non-SAM type-classes you must supply the matching `*InstanceBuilder`.
