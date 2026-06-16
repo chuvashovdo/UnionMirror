@@ -73,7 +73,7 @@ object PrinterDemo:
   given Printer[Int]    = i => s"int:$i"
   given Printer[String] = s => s"str:$s"
 
-  val p = UnionDeriver.deriveContravariant[Printer, Int | String]
+  val p = UnionDeriver.derive[Printer, Int | String]
   p.print(42)      // "int:42"
   p.print("hello") // "str:hello"
 ```
@@ -87,7 +87,7 @@ trait Parser[+T]:
 given Parser[Int]     = _.toInt
 given Parser[Boolean] = _.toBoolean
 
-val p = UnionDeriver.deriveCovariant[Parser, Int | Boolean]
+val p = UnionDeriver.derive[Parser, Int | Boolean]
 p.parse("123")  // 123
 p.parse("true") // true
 ```
@@ -104,8 +104,46 @@ given UnionDeriver.BinaryInstanceBuilder[cats.Eq] =
         val ox = ordinal(x); val oy = ordinal(y)
         ox == oy && elems(ox).eqv(x, y)
 
-val eq = UnionDeriver.deriveBinary[cats.Eq, Int | String]
+val eq = UnionDeriver.derive[cats.Eq, Int | String]
 ```
+
+### One `given` for the whole type class
+
+The most powerful pattern: instead of calling `derive` per union, write a **single
+generic `given`** keyed on the synthesized `Mirror.SumOf`. It then resolves for
+_any_ union type automatically.
+
+```scala
+import unionmirror.{ UnionDeriver, auto }
+import unionmirror.auto.given            // synthesizes Mirror.SumOf for unions
+
+import scala.annotation.experimental
+
+@experimental
+object Logging:
+  trait Loggable[-T]:
+    def log(value: T): String
+
+  given Loggable[Int]     = i => s"INT:$i"
+  given Loggable[String]  = s => s"STR:$s"
+  given Loggable[Boolean] = b => s"BOOL:$b"
+
+  // One given covers every union of types that already have a Loggable:
+  inline given derivedUnion[T](using scala.deriving.Mirror.SumOf[T]): Loggable[T] =
+    UnionDeriver.derive[Loggable, T]
+
+import Logging.given
+
+summon[Loggable[Int | String]].log(42)            // "INT:42"
+summon[Loggable[Int | String | Boolean]].log(true) // "BOOL:true"
+```
+
+> **Scope it narrowly.** Keep the generic `given` inside the type class's own
+> object/trait (as above) and import it explicitly. Combining a blanket
+> `given [T](using Mirror.SumOf[T]): F[T]` with a wildcard `import
+unionmirror.auto.given` in a broad scope can over-trigger derivation or clash
+> with existing instances. The same compile-time limits apply (top types and
+> JVM-erasure collisions — see below).
 
 ### Cats interop
 

@@ -201,6 +201,26 @@ import scala.annotation.experimental
     assertEquals(loggable.log("hello"), "STR:hello")
     assertEquals(loggable.log(true), "BOOL:true")
 
+  test("typeclass-local given works for multiple unions"):
+    trait Loggable[-T]:
+      def log(value: T): String
+
+    given Loggable[Int] = (i: Int) => s"INT:$i"
+    given Loggable[String] = (s: String) => s"STR:$s"
+    given Loggable[Boolean] = (b: Boolean) => s"BOOL:$b"
+
+    inline given [T](using scala.deriving.Mirror.SumOf[T]): Loggable[T] =
+      UnionDeriver.derive[Loggable, T]
+
+    val loggable2 = summon[Loggable[Int | String]]
+    val loggable3 = summon[Loggable[Int | String | Boolean]]
+
+    assertEquals(loggable2.log(42), "INT:42")
+    assertEquals(loggable2.log("hello"), "STR:hello")
+    assertEquals(loggable3.log(42), "INT:42")
+    assertEquals(loggable3.log("hello"), "STR:hello")
+    assertEquals(loggable3.log(true), "BOOL:true")
+
   test("API example: Show[Int | String]"):
     trait Show[-T]:
       def show(value: T): String
